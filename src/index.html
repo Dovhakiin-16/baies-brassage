@@ -1,0 +1,1455 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Baies de brassage</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<style>
+/* Layout : liste des baies à gauche, élévation de la baie au centre (1U dessiné = 48 px), fiche détaillée à droite */
+:root{
+  --bg:#e8ecf0; --surface:#f8fafb; --surface-2:#dfe5eb; --line:#c4cdd6; --fg:#16202b; --muted:#5a6878;
+  --accent:#1c62c8; --accent-ink:#ffffff; --accent-soft:#d8e5f8;
+  --label:#f2d548; --label-ink:#1d1904;
+  --ok:#23864c; --warn:#b67a0c; --danger:#c03838; --danger-soft:#f6dcdc;
+  --rack:#22272e; --rack-2:#2c323b; --rail:#3b434e; --hole:#12161b; --unum:#8f9bab;
+  --face-patch:#2b3038; --face-patch-ink:#e8ecf1;
+  --face-switch:#cdd3da; --face-switch-ink:#1a222c;
+  --face-other:#9ba5b1; --face-other-ink:#10151b;
+  --socket:#0c0f13; --socket-ink:#a9b3bf; --led:#3fdc72;
+  --halo:rgba(10,14,20,.55);
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10151b; --surface:#171e27; --surface-2:#202a35; --line:#2f3b48; --fg:#e3e9ef; --muted:#93a1b1;
+  --accent:#5e9cff; --accent-ink:#071224; --accent-soft:#1a2c48;
+  --label:#e3c73d; --label-ink:#1b1703;
+  --ok:#4cc27b; --warn:#e0a83a; --danger:#ef6b6b; --danger-soft:#3a1d20;
+  --rack:#0a0d11; --rack-2:#141920; --rail:#29303a; --hole:#05070a; --unum:#6f7c8c;
+  --face-patch:#22272f; --face-patch-ink:#e8ecf1;
+  --face-switch:#5a636f; --face-switch-ink:#f1f4f7;
+  --face-other:#3f4853; --face-other-ink:#e5eaef;
+  --socket:#07090c; --socket-ink:#9aa5b2;
+  --halo:rgba(0,0,0,.6);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#10151b; --surface:#171e27; --surface-2:#202a35; --line:#2f3b48; --fg:#e3e9ef; --muted:#93a1b1;
+  --accent:#5e9cff; --accent-ink:#071224; --accent-soft:#1a2c48;
+  --label:#e3c73d; --label-ink:#1b1703;
+  --ok:#4cc27b; --warn:#e0a83a; --danger:#ef6b6b; --danger-soft:#3a1d20;
+  --rack:#0a0d11; --rack-2:#141920; --rail:#29303a; --hole:#05070a; --unum:#6f7c8c;
+  --face-patch:#22272f; --face-patch-ink:#e8ecf1;
+  --face-switch:#5a636f; --face-switch-ink:#f1f4f7;
+  --face-other:#3f4853; --face-other-ink:#e5eaef;
+  --socket:#07090c; --socket-ink:#9aa5b2;
+  --halo:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+
+/* ---------- barre du haut */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.01em;text-transform:uppercase;line-height:1}
+.brand .tag{font-family:var(--f-mono);font-size:11px;background:var(--label);color:var(--label-ink);padding:2px 6px;border-radius:2px;letter-spacing:.04em}
+.search{position:relative;flex:1 1 320px;max-width:560px;min-width:0}
+.search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2}
+.qres{position:absolute;z-index:40;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 12px 32px rgba(0,0,0,.18);max-height:min(60vh,480px);overflow:auto}
+.qres button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-bottom:1px solid var(--line)}
+.qres button:hover,.qres button.hot{background:var(--accent-soft)}
+.qres .t{font-weight:600}
+.qres .s{font-size:12.5px;color:var(--muted);font-family:var(--f-mono)}
+.qres .none{padding:12px;color:var(--muted)}
+.status{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status.ok .dot{background:var(--ok)}
+.status.warn .dot{background:var(--warn)}
+
+/* ---------- grille principale */
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 380px;gap:0;align-items:start;min-height:calc(100vh - 70px)}
+.side{padding:18px 14px 18px max(16px,env(safe-area-inset-left,0px));border-right:1px solid var(--line);display:flex;flex-direction:column;gap:18px;position:sticky;top:0}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.racks{display:flex;flex-direction:column;gap:4px}
+.rk{display:grid;gap:4px;text-align:left;border:1px solid transparent;background:none;border-radius:var(--r);padding:8px 10px}
+.rk:hover{background:var(--surface-2)}
+.rk.on{background:var(--surface);border-color:var(--line);box-shadow:inset 3px 0 0 var(--accent)}
+.rk .n{font-weight:600;line-height:1.2}
+.rk .m{font-size:12px;color:var(--muted)}
+.rk .bar{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+.rk .bar i{display:block;height:100%;background:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:7px 12px;font-weight:500;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:transparent;background:none}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.danger.fill{background:var(--danger);color:#fff}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.datactl{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.datactl .btn{justify-content:flex-start}
+.datafile{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px}
+.datafile .fn{font-family:var(--f-mono);font-size:11.5px;word-break:break-all;color:var(--muted)}
+.datafile .fn b{color:var(--fg);font-weight:600}
+.datafile .row2{display:flex;flex-wrap:wrap;gap:4px}
+
+.main{min-width:0;padding:18px 20px 40px}
+.mhead{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px;margin-bottom:14px}
+.mhead h2{margin:0;font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1;text-wrap:balance}
+.mhead .site{color:var(--muted);font-size:14px;margin-top:4px}
+.stats{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--fg);font-weight:600}
+.tools{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:7px 12px;font-size:14px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--fg);color:var(--bg)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
+
+.linkbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);padding:9px 12px;margin-bottom:12px;font-size:14px}
+.linkbar.warnb{background:var(--danger-soft);border-color:var(--danger)}
+
+/* ---------- élévation de baie */
+.rack-scroll{overflow-x:auto;padding-bottom:6px}
+.rack-fit{margin:0 auto}
+.rack{--uh:48px;position:relative;width:988px;transform-origin:top left;background:var(--rack);border-radius:8px;padding:16px 0 18px;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 18px 40px -20px rgba(0,0,0,.45)}
+.rack-top{display:flex;justify-content:space-between;padding:0 18px 10px;font-family:var(--f-mono);font-size:11px;color:var(--unum);letter-spacing:.05em}
+.rack-body{position:relative;display:grid;grid-template-columns:30px 22px 880px 22px 30px;margin:0 2px}
+.unums{display:flex;flex-direction:column}
+.unums span{height:var(--uh);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:10.5px;color:var(--unum);font-variant-numeric:tabular-nums;border-top:1px solid rgba(255,255,255,.04)}
+.rail{background:var(--rail);background-image:radial-gradient(circle at 50% 50%,var(--hole) 0 3px,transparent 3.5px);background-size:22px calc(var(--uh)/3);border-radius:2px}
+.bay{position:relative;background:var(--rack-2)}
+.slot{position:absolute;left:0;right:0;height:var(--uh);border-top:1px dashed rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:12px;color:transparent;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+.slot:hover,.slot:focus-visible{color:var(--unum);background:rgba(255,255,255,.04)}
+.dev{position:absolute;left:0;right:0;display:grid;grid-template-columns:14px 128px minmax(0,1fr) 14px;border-radius:2px;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -1px 0 rgba(0,0,0,.35) inset;user-select:none;-webkit-user-select:none}
+.dev.k-patch{background:var(--face-patch);color:var(--face-patch-ink)}
+.dev.k-switch{background:var(--face-switch);color:var(--face-switch-ink)}
+.dev.k-other,.dev.k-nas,.dev.k-server,.dev.k-router{background:var(--face-other);color:var(--face-other-ink)}
+.face .eqtag{position:absolute;right:12px;top:6px;font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.6}
+.dev.sel{outline:2px solid var(--accent);outline-offset:1px;z-index:3}
+.dev.drag{z-index:6;opacity:.92;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.dev.bad{outline:2px solid var(--danger)}
+.ear{background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(255,255,255,.06));display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:6px 0}
+.ear i{width:7px;height:7px;border-radius:50%;background:var(--rack-2);box-shadow:0 0 0 1px rgba(0,0,0,.4) inset}
+.grip{padding:6px 8px;display:flex;flex-direction:column;justify-content:center;gap:1px;cursor:grab;border-right:1px solid rgba(127,127,127,.22);min-width:0;touch-action:none}
+.grip:active{cursor:grabbing}
+.grip .dn{font-family:var(--f-display);font-weight:700;font-size:15px;line-height:1.05;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grip .dm{font-size:10.5px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--f-mono)}
+.face{position:relative;min-width:0}
+.face.vent{background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.22) 0 3px,transparent 3px 7px);background-size:100% 40%;background-position:right 30% center;background-repeat:no-repeat}
+.face.brush{margin:10px 16px;background:repeating-linear-gradient(90deg,var(--hole) 0 34px,transparent 34px 42px);border-radius:2px;opacity:.85}
+.face .ip{position:absolute;right:12px;bottom:6px;font-family:var(--f-mono);font-size:10.5px;opacity:.75}
+
+.port{position:absolute;width:22px;height:16px;padding:0;border:0;border-radius:2px;background:var(--socket);box-shadow:0 0 0 1px rgba(0,0,0,.5),0 1px 0 rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:8.5px;font-weight:500;color:var(--socket-ink);line-height:1}
+.port::after{content:"";position:absolute;bottom:0;left:7px;width:8px;height:3px;background:rgba(255,255,255,.08);border-radius:1px 1px 0 0}
+.port span{position:relative;z-index:2}
+.port.on{background:var(--cord);color:var(--cink)}
+.port.on::after{background:rgba(0,0,0,.25)}
+.port .led{position:absolute;top:-4px;right:2px;width:5px;height:3px;border-radius:1px;background:var(--led);box-shadow:0 0 4px var(--led)}
+.port.doc:not(.on){box-shadow:0 0 0 1px var(--label),0 1px 0 rgba(255,255,255,.1)}
+.port:hover{transform:translateY(-1px);box-shadow:0 0 0 2px var(--accent)}
+.port.sel{box-shadow:0 0 0 2px var(--accent),0 0 0 4px var(--accent-soft);z-index:4}
+.port.mate{box-shadow:0 0 0 2px var(--accent);z-index:4;animation:pulse 1.4s ease-in-out infinite}
+.port.target{box-shadow:0 0 0 2px var(--label)}
+.port.target.busy{box-shadow:0 0 0 2px var(--warn)}
+.port.flash{animation:flash 1s ease-out 2}
+@keyframes pulse{50%{box-shadow:0 0 0 2px var(--accent),0 0 0 6px transparent}}
+@keyframes flash{0%{box-shadow:0 0 0 2px var(--accent),0 0 0 10px var(--accent-soft)}100%{box-shadow:0 0 0 2px var(--accent),0 0 0 0 transparent}}
+.plabel{position:absolute;width:22px;height:9px;font-family:var(--f-mono);font-size:7px;line-height:9px;text-align:center;overflow:hidden;white-space:nowrap;border-radius:1px;color:var(--label-ink);background:var(--label);pointer-events:none}
+.plabel.empty{background:rgba(255,255,255,.07)}
+.cords{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:visible}
+.cords path{fill:none;stroke-linecap:round}
+.cords .halo{stroke:var(--halo);stroke-width:6}
+.cords .wire{stroke-width:3}
+@media (prefers-reduced-motion:reduce){.port.mate,.port.flash{animation:none}.port:hover{transform:none}}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .sw{width:16px;height:11px;border-radius:2px;background:var(--socket);display:inline-block;position:relative}
+.legend .sw.doc{box-shadow:0 0 0 1px var(--label)}
+.legend .sw.on{background:#2f6fe0}
+.legend .sw.led::before{content:"";position:absolute;top:-4px;right:1px;width:5px;height:3px;background:var(--led);border-radius:1px}
+
+/* ---------- tableau */
+.tblctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.tblctl input[type=search]{padding:7px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);min-width:0;flex:1 1 220px;max-width:340px}
+.tblctl select{padding:7px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;white-space:nowrap;color:var(--muted)}
+td{padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
+td.m{font-family:var(--f-mono);font-size:12.5px}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.jack{font-family:var(--f-mono);font-size:12px;background:var(--label);color:var(--label-ink);padding:1px 5px;border-radius:2px}
+.cdot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:6px;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.dim{color:var(--muted)}
+.tcount{font-size:13px;color:var(--muted)}
+
+/* ---------- fiche (inspecteur) */
+.insp{position:sticky;top:0;max-height:100vh;overflow:auto;border-left:1px solid var(--line);background:var(--surface);padding:18px max(16px,env(safe-area-inset-right,0px)) 30px 18px;display:flex;flex-direction:column;gap:18px}
+.insp h2{margin:2px 0 0;font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.05;text-wrap:balance}
+.ihead{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.iclose{display:none}
+.fields{display:grid;gap:12px}
+.fields.two{grid-template-columns:1fr 1fr}
+.fld{display:grid;gap:4px;min-width:0}
+.fld label{font-size:12.5px;font-weight:600;color:var(--muted)}
+.fld input,.fld select,.fld textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.fld textarea{min-height:64px;resize:vertical}
+.fld .hint{font-size:12px;color:var(--muted)}
+.fld.err input{border-color:var(--danger)}
+.errmsg{font-size:13px;color:var(--danger)}
+.box{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;background:var(--bg)}
+.box h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.sp{justify-content:space-between}
+.linkcur{font-family:var(--f-mono);font-size:14px;font-weight:600}
+.trace{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.trace li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;position:relative;padding-bottom:10px}
+.trace li:not(:last-child)::before{content:"";position:absolute;left:10px;top:20px;bottom:0;width:2px;background:var(--trace,var(--line))}
+.trace .nd{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--f-mono);color:var(--muted)}
+.trace li.on .nd{border-color:var(--accent);color:var(--accent)}
+.trace li.cur .nd{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.trace .k{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:var(--f-display);font-weight:600}
+.trace .v{font-weight:600;overflow-wrap:anywhere}
+.trace .v.none{font-weight:400;color:var(--muted);font-style:italic}
+.trace button.v{border:0;background:none;padding:0;text-align:left;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.presets{display:grid;gap:6px}
+.preset{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);padding:8px 10px}
+.preset.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.preset .ico{width:42px;height:14px;border-radius:2px;flex:none}
+.preset .ico.patch{background:var(--face-patch)}
+.preset .ico.switch{background:var(--face-switch);box-shadow:0 0 0 1px var(--line) inset}
+.preset .ico.other,.preset .ico.nas,.preset .ico.server,.preset .ico.router{background:var(--face-other)}
+.preset .ico.nas,.preset .ico.server,.preset .ico.router{background-image:repeating-linear-gradient(90deg,var(--socket) 0 5px,transparent 5px 8px);background-size:30px 6px;background-position:5px center;background-repeat:no-repeat}
+.quick{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+.quick table{font-size:13px}
+.quick td{padding:2px 4px}
+.quick td:first-child{padding-left:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.quick th{padding:6px 6px;font-size:11.5px}
+.quick input{width:100%;min-width:84px;padding:5px 6px;border:1px solid transparent;border-radius:4px;background:transparent}
+.quick input:hover{border-color:var(--line)}
+.quick input:focus{border-color:var(--accent);background:var(--bg)}
+.quick tbody tr{cursor:default}
+.quick .lk{font-family:var(--f-mono);font-size:12px;border:0;background:none;padding:2px 4px;color:var(--accent);white-space:nowrap}
+.quick .lk.no{color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--bg)}
+.kpi b{display:block;font-family:var(--f-display);font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.devlist{display:grid;gap:4px}
+.devlist button{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;border:1px solid transparent;background:none;border-radius:var(--r);padding:6px 8px}
+.devlist button:hover{background:var(--surface-2)}
+.devlist .u{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.devlist .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.devlist .ct{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.confirm{border:1px solid var(--danger);background:var(--danger-soft);border-radius:var(--r);padding:10px 12px;display:grid;gap:8px;font-size:14px}
+
+.empty{max-width:520px;margin:60px auto;text-align:center;display:grid;gap:14px;justify-items:center}
+.empty h2{font-family:var(--f-display);font-size:30px;margin:0}
+.empty p{margin:0;color:var(--muted)}
+.mini-rack{width:120px;height:90px;border-radius:6px;background:var(--rack);padding:10px 14px;display:grid;gap:4px}
+.mini-rack i{border-radius:2px;background:var(--rack-2)}
+.mini-rack i:nth-child(1){background:var(--face-patch);box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.mini-rack i:nth-child(2){background:var(--face-switch)}
+
+.toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:var(--r);font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
+.toast.err{background:var(--danger);color:#fff}
+
+/* ---------- responsive */
+@media (max-width:1250px){
+  .app{grid-template-columns:210px minmax(0,1fr)}
+  .insp{position:fixed;z-index:30;top:auto;bottom:0;left:0;right:0;max-height:72vh;border-left:0;border-top:1px solid var(--line);box-shadow:0 -16px 40px rgba(0,0,0,.22);border-radius:12px 12px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .insp.closed{display:none}
+  .iclose{display:inline-flex}
+  .main{padding-bottom:60px}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;border-right:0;border-bottom:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));gap:10px}
+  .racks{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .rk{min-width:150px;flex:none}
+  .datactl{flex-direction:row;flex-wrap:wrap}
+  .side .eyebrow.data{display:none}
+  .main{padding:14px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
+  .tools{margin-left:0}
+  .status{margin-left:0}
+  .fields.two{grid-template-columns:1fr}
+}
+</style>
+
+</head><body>
+<header class="top">
+  <div class="brand"><h1>Baies de brassage</h1><span class="tag">PRISE → PANNEAU → SWITCH</span></div>
+  <div class="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+    <input id="q" type="search" autocomplete="off" placeholder="Rechercher une prise, un poste, un port, un VLAN…" aria-label="Rechercher">
+    <div id="qres" class="qres" hidden></div>
+  </div>
+  <div id="status" class="status"><span class="dot"></span><span id="statusTxt">Chargement…</span></div>
+</header>
+
+<div class="app">
+  <aside class="side">
+    <div style="display:grid;gap:8px">
+      <div class="eyebrow">Baies</div>
+      <div id="racks" class="racks"></div>
+      <button class="btn sm" data-act="rack-new" id="btnRackNew">+ Nouvelle baie</button>
+    </div>
+    <div style="display:grid;gap:8px">
+      <div class="eyebrow data">Données</div>
+      <div class="datactl">
+        <button class="btn ghost sm" data-act="export-csv" id="btnCsv" hidden>Exporter pour Excel (.csv)</button>
+        <button class="btn ghost sm" data-act="export-json" id="btnJson" hidden>Sauvegarde complète (.json)</button>
+        <button class="btn ghost sm" data-act="import-json" id="btnImport">Restaurer une sauvegarde</button>
+        <input type="file" id="fileImport" accept=".json,application/json" hidden>
+      </div>
+      <div id="dataFile" class="datafile" hidden></div>
+    </div>
+  </aside>
+
+  <main class="main" id="main"></main>
+
+  <aside class="insp" id="insp"></aside>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+/* ============ constantes ============ */
+const UH = 48;                         // hauteur dessinée d'un U (1U réel = 44,45 mm)
+const PW = 22, PH = 16, PG = 3, GG = 10; // port : largeur, hauteur, écart, écart entre groupes de 6
+const CORDS = {bleu:"#2f6fe0", jaune:"#f2c81e", rouge:"#d8383a", vert:"#2ea65a", orange:"#ee7c22", violet:"#8656d6", gris:"#8c96a3", blanc:"#eef1f4", noir:"#25292e"};
+const LIGHT_CORDS = new Set(["jaune","blanc","gris","orange"]);
+const DEFAULT_CORD = "bleu";
+// Équipements réseau dont les ports se relient directement à un port de switch
+const EQ = {
+  nas:    {label:"NAS",     prefix:"LAN", base:"NAS-", ports:2},
+  server: {label:"Serveur", prefix:"NIC", base:"SRV-", ports:4},
+  router: {label:"Routeur", prefix:"Gi0/", base:"RTR-", ports:4}
+};
+const isEq  = d => !!(d && EQ[d.kind]);
+const isEnd = d => !!(d && (d.kind==="patch" || EQ[d.kind]));   // côté « départ » d'un cordon vers un switch
+const KIND_LABEL = {patch:"Panneau de brassage", switch:"Switch", nas:"NAS", server:"Serveur", router:"Routeur", other:"Équipement"};
+const PRESETS = [
+  {key:"pp24", label:"Panneau de brassage 24 ports", sub:"1U · ports 1 à 24 sur une rangée", kind:"patch", ports:24, h:1, model:"Panneau Cat6 24 ports"},
+  {key:"pp48", label:"Panneau de brassage 48 ports", sub:"2U · deux rangées de 24", kind:"patch", ports:48, h:2, model:"Panneau Cat6 48 ports"},
+  {key:"sw24", label:"Switch 24 ports + 4 SFP", sub:"1U · impairs en haut, pairs en bas", kind:"switch", ports:24, sfp:4, h:1, model:"Switch 24 ports"},
+  {key:"sw48", label:"Switch 48 ports + 4 SFP", sub:"1U · impairs en haut, pairs en bas", kind:"switch", ports:48, sfp:4, h:1, model:"Switch 48 ports"},
+  {key:"cm", label:"Passe-câbles", sub:"1U · guide-cordons à brosse", kind:"other", variant:"cm", h:1, name:"Passe-câbles"},
+  {key:"nas", label:"NAS", sub:"1U · 2 ports réseau", kind:"nas", ports:2, h:1, model:"NAS"},
+  {key:"server", label:"Serveur", sub:"2U · 4 ports réseau", kind:"server", ports:4, h:2, model:"Serveur"},
+  {key:"router", label:"Routeur / pare-feu", sub:"1U · 4 ports réseau", kind:"router", ports:4, h:1, model:"Routeur"},
+  {key:"other", label:"Autre équipement", sub:"onduleur, tiroir, étagère…", kind:"other", h:1, name:"Équipement"}
+];
+const LSK = "baies-brassage-v1";
+
+/* ============ état ============ */
+const S = {
+  racks:{}, devices:{}, loaded:false, mode:null, readOnly:false,
+  ui:{rackId:null, view:"rack", sel:null, link:null, confirm:null, showCords:false, tq:"", tscope:"rack", tempty:false, newPreset:"pp24", qHot:0, inspOpen:false}
+};
+let backend = null, downloads = null, linkIdx = new Map(), pendingInsp = false;
+
+/* ============ utilitaires ============ */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const uid = p => p + "-" + Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2,6);
+const byNum = (a,b) => a.localeCompare(b, "fr", {numeric:true});
+function toast(msg, err, ms){ const t=$("#toast"); t.textContent=msg; t.className="toast"+(err?" err":""); t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true, ms||(err?4200:2000)); }
+function lsGet(k){ try{ return localStorage.getItem(k); }catch{ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch{} }
+
+/* ============ modèle ============ */
+const racksSorted = () => Object.values(S.racks).sort((a,b)=>(a.order??0)-(b.order??0) || byNum(a.name||"",b.name||""));
+const devsOf = rid => Object.values(S.devices).filter(d=>d.rackId===rid).sort((a,b)=>(b.u+b.h)-(a.u+a.h));
+const portData = (d,k) => (d.p && d.p[k]) || {};
+function portKeys(d){
+  if (d.kind==="patch" || isEq(d)) return Array.from({length:d.ports||0},(_,i)=>String(i+1));
+  if (d.kind==="switch") return [...Array.from({length:d.ports||0},(_,i)=>String(i+1)), ...Array.from({length:d.sfp||0},(_,i)=>"S"+(i+1))];
+  return [];
+}
+function portLabel(d,k){
+  if (d.kind==="switch") return k.startsWith("S") ? (d.sfpPrefix||"SFP")+k.slice(1) : (d.portPrefix||"")+k;
+  if (d.kind==="patch") return String(Number(k) + (parseInt(d.start,10)||1) - 1);
+  if (isEq(d)) return (d.portPrefix ?? EQ[d.kind].prefix) + k;
+  return k;
+}
+// libellé d'un port de panneau à partir de l'id du panneau
+const ppLabel = (id,k) => S.devices[id] ? portLabel(S.devices[id],k) : k;
+function rebuildIndex(){
+  linkIdx = new Map();
+  for (const d of Object.values(S.devices)) if ((isEnd(d) || d.kind==="switch") && d.p) for (const [k,p] of Object.entries(d.p)) {
+    if (p.sw && S.devices[p.sw.d] && portKeys(d).includes(k) && portKeys(S.devices[p.sw.d]).includes(p.sw.p)) linkIdx.set(p.sw.d+":"+p.sw.p, {d:d.id, k});
+  }
+}
+// Port de switch : soit il porte lui-même le lien (liaison switch ↔ switch qu'il a créée), soit un autre port pointe vers lui
+function mateOfSwitch(swId,k){
+  const d=S.devices[swId], p=d?portData(d,k):{};
+  if (p.sw && S.devices[p.sw.d] && portKeys(S.devices[p.sw.d]).includes(p.sw.p)) return {d:p.sw.d, k:p.sw.p};
+  return linkIdx.get(swId+":"+k) || null;
+}
+const isTrunk = (d,k) => d?.kind==="switch" && S.devices[mateOfSwitch(d.id,k)?.d]?.kind==="switch";
+// Couleur du cordon : elle est enregistrée sur le port qui porte le lien
+function linkColor(d,k){
+  if (portData(d,k).sw) return cordOf(d,k);
+  const m=linkIdx.get(d.id+":"+k); return m ? cordOf(S.devices[m.d], m.k) : DEFAULT_CORD;
+}
+// Port qui porte réellement le lien (pour y écrire la couleur)
+function linkOwner(d,k){ if (portData(d,k).sw) return {d:d.id,k}; return linkIdx.get(d.id+":"+k) || null; }
+function mateOfPatch(d,k){ const p=portData(d,k); return (p.sw && S.devices[p.sw.d]) ? {d:p.sw.d, k:p.sw.p} : null; }
+function cordOf(d,k){ const p=portData(d,k); return CORDS[p.color] ? p.color : DEFAULT_CORD; }
+function occupied(rid, ignoreId){
+  const m = new Map();
+  for (const d of devsOf(rid)) if (d.id!==ignoreId) for (let u=d.u; u<d.u+d.h; u++) m.set(u,d);
+  return m;
+}
+function fits(rid, u, h, ignoreId){
+  const r=S.racks[rid]; if(!r) return {ok:false,msg:"Baie introuvable"};
+  if (u<1 || u+h-1>r.units) return {ok:false, msg:`Hors de la baie (U1 à U${r.units})`};
+  const occ = occupied(rid, ignoreId);
+  for (let x=u; x<u+h; x++) if (occ.has(x)) return {ok:false, msg:`U${x} est occupé par ${occ.get(x).name}`};
+  return {ok:true};
+}
+function firstFree(rid, h){ const r=S.racks[rid]; if(!r) return null; for(let u=r.units-h+1; u>=1; u--) if(fits(rid,u,h).ok) return u; return null; }
+function rackStats(rid){
+  const r=S.racks[rid]; let usedU=0, pT=0,pU=0,sT=0,sU=0;
+  for (const d of devsOf(rid)) {
+    usedU += d.h;
+    if (d.kind==="patch") for (const k of portKeys(d)) { pT++; if (mateOfPatch(d,k)) pU++; }
+    if (d.kind==="switch") for (const k of portKeys(d)) { sT++; if (mateOfSwitch(d.id,k) || portData(d,k).host) sU++; }
+  }
+  return {units:r?.units||0, usedU, pT,pU,sT,sU};
+}
+
+/* ============ stockage ============ */
+function bodyOf(o){ const b=clone(o); delete b.id; return b; }
+function makeDbBackend(db){
+  const q = {};
+  const run = (path, fn) => { const next=(q[path]||Promise.resolve()).then(fn).catch(onWriteError); q[path]=next; return next; };
+  return {
+    kind:"db",
+    saveRack: r => run("racks/"+r.id, () => db.collection("racks").doc(r.id).set(bodyOf(r))),
+    delRack: id => run("racks/"+id, () => db.collection("racks").doc(id).delete()),
+    saveDev: d => run("devices/"+d.id, () => db.collection("devices").doc(d.id).set(bodyOf(d))),
+    delDev: id => run("devices/"+id, () => db.collection("devices").doc(id).delete())
+  };
+}
+function onWriteError(e){
+  const c = e && e.code;
+  if (c==="invalid_argument") { S.readOnly=true; toast("Modification refusée : vous avez un accès en lecture seule à ces baies.", true); renderAll(); }
+  else if (c==="quota_exceeded") toast("Espace de stockage plein : supprimez des équipements inutilisés.", true);
+  else if (c==="revoked") { S.readOnly=true; renderAll(); }
+  else toast("Échec de l'enregistrement. Réessayez dans un instant.", true);
+}
+const localBackend = {
+  kind:"local",
+  persist(){ lsSet(LSK, JSON.stringify({racks:S.racks, devices:S.devices})); },
+  saveRack(){ this.persist(); }, delRack(){ this.persist(); }, saveDev(){ this.persist(); }, delDev(){ this.persist(); }
+};
+// Application de bureau : tout l'état est écrit dans un fichier JSON (écriture groupée toutes les 300 ms)
+const fileBackend = {
+  kind:"file", t:null, dirty:false,
+  snapshot(){ return {racks:S.racks, devices:S.devices}; },
+  persist(){ this.dirty=true; clearTimeout(this.t); this.t=setTimeout(()=>this.flush(), 300); },
+  async flush(){
+    clearTimeout(this.t); if(!this.dirty) return; this.dirty=false;
+    const r = await window.desktop.save(this.snapshot());
+    if (!r.ok) { this.dirty=true; setStatus("warn","Échec de l'enregistrement"); toast("Impossible d'enregistrer : "+(r.error||"erreur inconnue"), true); return; }
+    if (r.conflict) toast("Le fichier avait été modifié ailleurs : l'ancienne version est gardée à côté (.conflit).", true);
+    setStatus("ok","Enregistré");
+  },
+  flushSync(){ clearTimeout(this.t); if(this.dirty){ this.dirty=false; window.desktop.saveSync(this.snapshot()); } },
+  saveRack(){ this.persist(); }, delRack(){ this.persist(); }, saveDev(){ this.persist(); }, delDev(){ this.persist(); }
+};
+function saveRack(r){ if(S.readOnly) return; S.racks[r.id]=r; backend.saveRack(r); onData(); }
+function saveDev(d){ if(S.readOnly) return; S.devices[d.id]=d; backend.saveDev(d); onData(); }
+function delDev(id){ if(S.readOnly) return; delete S.devices[id]; backend.delDev(id); onData(); }
+function delRack(id){ if(S.readOnly) return; delete S.racks[id]; backend.delRack(id); onData(); }
+
+async function boot(){
+  renderAll();
+  if (window.desktop) return startDesktop();
+  let db = null;
+  const hasClaude = !!(window.claude && typeof window.claude.use === "function");
+  if (hasClaude) {
+    window.claude.use("downloads").then(x=>{ downloads=x; renderSide(); }).catch(()=>{});
+    try { db = await window.claude.use("db"); } catch { db = null; }
+  }
+  if (db) startDb(db); else startLocal();
+}
+function startLocal(){
+  S.mode="local"; backend=localBackend;
+  try { const raw=lsGet(LSK); if (raw) { const o=JSON.parse(raw); S.racks=o.racks||{}; S.devices=o.devices||{}; } } catch {}
+  S.loaded=true; setStatus("warn","Enregistré dans ce navigateur"); onData();
+}
+function applyFile(r){
+  S.racks = {}; S.devices = {};
+  if (r.data) {
+    for (const [k,v] of Object.entries(r.data.racks||{})) S.racks[k]={...v, id:k};
+    for (const [k,v] of Object.entries(r.data.devices||{})) S.devices[k]={...v, id:k};
+  }
+  S.dataPath = r.path; S.ui.sel=null; S.ui.link=null; S.ui.rackId=null;
+}
+async function startDesktop(){
+  S.mode="file"; backend=fileBackend;
+  downloads = { save: async ({filename, data}) => { const r = await window.desktop.saveFile(filename, data); if (r.canceled) throw {code:"declined"}; if (!r.ok) throw new Error(r.error); } };
+  const r = await window.desktop.load();
+  if (r.ok) { applyFile(r); S.readOnly=false; setStatus("ok","Enregistré"); if (r.warn) toast(r.warn, true); }
+  else { S.dataPath=r.path; S.readOnly=true; setStatus("warn","Fichier illisible"); toast("Le fichier de données est illisible : "+r.error+" — ouvrez-en un autre (Fichier > Ouvrir).", true); }
+  S.loaded=true; onData();
+  window.addEventListener("beforeunload", ()=>fileBackend.flushSync());
+  window.desktop.onMenu(act => {
+    if (act==="data-open") dataOpen();
+    else if (act==="data-saveas") dataSaveAs();
+    else if (act==="export-csv") { if (Object.keys(S.racks).length) save("brassage.csv", csvOf()); else toast("Aucune baie à exporter.", true); }
+  });
+  // Nouvelle version déposée dans le dossier des mises à jour ?
+  setTimeout(async () => { try { const v = await window.desktop.checkUpdate?.(); if (v) toast(`Nouvelle version ${v} disponible : Fichier › Mettre à jour la version`, false, 8000); } catch {} }, 1500);
+  // Si le fichier a été modifié ailleurs (ex. partage réseau), on recharge au retour sur la fenêtre
+  window.desktop.onFocus(async () => {
+    if (fileBackend.dirty || drag) return;
+    if (await window.desktop.changed()) { const x = await window.desktop.reload(); if (x.ok) { const keep=S.ui.rackId; applyFile(x); S.ui.rackId=keep; onData(); toast("Données rechargées : le fichier a été modifié depuis un autre poste."); } }
+  });
+}
+async function dataOpen(){
+  await fileBackend.flush();
+  const r = await window.desktop.choose("open");
+  if (r.canceled) return;
+  if (!r.ok) { toast(r.error, true); return; }
+  applyFile(r); S.readOnly=false; setStatus("ok","Enregistré"); onData();
+  toast(`Fichier ouvert : ${Object.keys(S.racks).length} baie(s)`);
+}
+async function dataSaveAs(){
+  await fileBackend.flush();
+  const r = await window.desktop.choose("new");
+  if (!r.ok) return;
+  S.dataPath = r.path; S.readOnly=false; fileBackend.persist(); await fileBackend.flush(); renderSide();
+  toast("Les baies sont maintenant enregistrées dans ce fichier.");
+}
+function startDb(db){
+  S.mode="db"; backend=makeDbBackend(db);
+  let okR=false, okD=false, dead=false;
+  const timer = setTimeout(()=>{ if(!(okR&&okD)) { setStatus("warn","Données injoignables pour l'instant"); S.loaded=true; renderAll(); } }, 10000);
+  const done = () => { if (okR && okD) { clearTimeout(timer); S.loaded=true; setStatus("ok","Synchronisé"); } };
+  const err = e => { if(dead) return; dead=true; clearTimeout(timer); S.loaded=true; if (e?.code==="revoked") S.readOnly=true; setStatus("warn","Synchronisation interrompue"); renderAll(); };
+  db.collection("racks").onSnapshot(snap => {
+    const o={}; snap.docs.forEach(s=>{ o[s.id]={...clone(s.data()), id:s.id}; }); S.racks=o;
+    if (!snap.metadata.fromCache) okR=true; done(); onData();
+  }, err);
+  db.collection("devices").onSnapshot(snap => {
+    const o={}; snap.docs.forEach(s=>{ o[s.id]={...clone(s.data()), id:s.id}; }); S.devices=o;
+    if (!snap.metadata.fromCache) okD=true; done(); onData();
+  }, err);
+}
+function setStatus(kind, txt){ S.st=[kind,txt]; paintStatus(); }
+function paintStatus(){ if(!S.st) return; const el=$("#status"); el.className="status "+S.st[0]; $("#statusTxt").textContent=S.st[1]+(S.readOnly?" · lecture seule":""); }
+
+/* ============ cycle de rendu ============ */
+function onData(){
+  rebuildIndex();
+  const rs = racksSorted();
+  if (!S.ui.rackId || !S.racks[S.ui.rackId]) {
+    const last = lsGet(LSK+":rack");
+    S.ui.rackId = (last && S.racks[last]) ? last : (rs[0]?.id || null);
+  }
+  // sélection devenue invalide
+  const s=S.ui.sel;
+  if (s && (s.type==="port"||s.type==="dev") && !S.devices[s.d]) S.ui.sel=null;
+  if (S.ui.link && !S.devices[S.ui.link.d]) S.ui.link=null;
+  renderAll();
+}
+function renderAll(){ renderSide(); renderMain(); renderInsp(); }
+
+/* ---------- colonne de gauche */
+function renderSide(){
+  paintStatus();
+  const el=$("#racks");
+  const rs=racksSorted();
+  el.innerHTML = rs.map(r=>{
+    const st=rackStats(r.id); const pct = st.units? Math.round(st.usedU/st.units*100):0;
+    return `<button class="rk ${r.id===S.ui.rackId?"on":""}" data-act="rack-select" data-id="${esc(r.id)}">
+      <span class="n">${esc(r.name||"Baie sans nom")}</span>
+      <span class="m">${esc(r.site||"")}${r.site?" · ":""}${st.usedU}/${st.units}U</span>
+      <span class="bar"><i style="width:${pct}%"></i></span></button>`;
+  }).join("") || `<div class="dim" style="font-size:13px">Aucune baie.</div>`;
+  $("#btnRackNew").hidden = S.readOnly || !S.loaded;
+  $("#btnCsv").hidden = !downloads || !rs.length;
+  $("#btnJson").hidden = !downloads || !rs.length;
+  $("#btnImport").hidden = S.readOnly || !S.loaded;
+  const df=$("#dataFile");
+  if (S.mode==="file") {
+    df.hidden=false;
+    const fp=S.dataPath||""; const i=Math.max(fp.lastIndexOf("\\"), fp.lastIndexOf("/"));
+    df.innerHTML = `<div class="eyebrow">Fichier de données</div>
+      <div class="fn" title="${esc(fp)}">${esc(fp.slice(0,i+1))}<b>${esc(fp.slice(i+1))}</b></div>
+      <div class="row2"><button class="btn ghost sm" data-act="data-open">Ouvrir…</button><button class="btn ghost sm" data-act="data-saveas">Enregistrer sous…</button><button class="btn ghost sm" data-act="data-reveal">Dossier</button></div>`;
+  } else df.hidden=true;
+}
+
+/* ---------- zone centrale */
+function renderMain(){
+  const m=$("#main");
+  if (!S.loaded) { m.innerHTML = `<div class="empty"><div class="mini-rack"><i></i><i></i><i></i></div><p>Chargement des baies…</p></div>`; return; }
+  const r = S.racks[S.ui.rackId];
+  if (!r) {
+    m.innerHTML = `<div class="empty"><div class="mini-rack"><i></i><i></i><i></i></div>
+      <h2>Aucune baie pour l'instant</h2>
+      <p>Créez une baie, placez-y vos panneaux de brassage et vos switchs, puis renseignez chaque port : prise murale, poste et port switch.</p>
+      ${S.readOnly?"":`<div class="row" style="justify-content:center"><button class="btn pri" data-act="rack-new">Créer une baie</button><button class="btn" data-act="sample">Charger une baie d'exemple</button></div>`}
+    </div>`;
+    return;
+  }
+  const st=rackStats(r.id);
+  m.innerHTML = `
+    <div class="mhead">
+      <div><h2>${esc(r.name||"Baie sans nom")}</h2><div class="site">${esc(r.site||"Emplacement non renseigné")}</div></div>
+      <div class="stats">
+        <span><b>${st.usedU}</b>/${st.units}U occupés</span>
+        <span>Panneaux : <b>${st.pU}</b>/${st.pT} ports brassés</span>
+        <span>Switchs : <b>${st.sU}</b>/${st.sT} ports actifs</span>
+      </div>
+      <div class="tools">
+        <div class="seg" role="tablist">
+          <button class="${S.ui.view==="rack"?"on":""}" data-act="view" data-v="rack">Baie</button>
+          <button class="${S.ui.view==="table"?"on":""}" data-act="view" data-v="table">Tableau</button>
+        </div>
+        ${S.ui.view==="rack"?`<label class="chk"><input type="checkbox" id="cordsToggle" ${S.ui.showCords?"checked":""}> Tous les cordons</label>`:""}
+        ${S.readOnly?"":`<button class="btn pri" data-act="dev-add">+ Équipement</button>`}
+      </div>
+    </div>
+    ${linkBarHtml()}
+    <div id="viewBody"></div>`;
+  if (S.ui.view==="rack") renderRack(r); else renderTable();
+}
+function linkBarHtml(){
+  const L=S.ui.link; if(!L) return "";
+  const d=S.devices[L.d]; if(!d) return "";
+  const target = isEnd(d) ? "un port de switch" : "un port de panneau, d'équipement ou d'un autre switch";
+  if (L.busy) {
+    const o=S.devices[L.busy.other.d];
+    return `<div class="linkbar warnb"><span>Ce port est déjà brassé avec <b class="mono">${esc(o?.name)} · ${esc(portLabel(o,L.busy.other.k))}</b>. Remplacer ce brassage ?</span>
+      <span class="row"><button class="btn sm danger fill" data-act="link-replace">Remplacer</button><button class="btn sm" data-act="link-cancel">Annuler</button></span></div>`;
+  }
+  return `<div class="linkbar"><span>Cliquez sur ${target} pour le ${isEq(d)||d.kind==="switch"?"relier à":"brasser avec"} <b class="mono">${esc(d.name)} · ${esc(portLabel(d,L.k))}</b>. Les ports jaunes sont libres.</span>
+    <button class="btn sm" data-act="link-cancel">Annuler (Échap)</button></div>`;
+}
+
+function renderRack(r){
+  const body=$("#viewBody");
+  const H = r.units*UH;
+  const nums = Array.from({length:r.units},(_,i)=>`<span>${r.units-i}</span>`).join("");
+  const occ = occupied(r.id);
+  let slots="";
+  for (let u=r.units; u>=1; u--) if(!occ.has(u)) slots += `<button class="slot" style="top:${(r.units-u)*UH}px" data-act="slot" data-u="${u}" ${S.readOnly?"disabled":""} aria-label="Emplacement libre U${u}">${S.readOnly?"":"+ ajouter en U"+u}</button>`;
+  const devs = devsOf(r.id).map(devHtml).join("");
+  body.innerHTML = `
+    <div class="rack-scroll" id="rackScroll"><div class="rack-fit" id="rackFit"><div class="rack" id="rackEl" style="--uh:${UH}px">
+      <div class="rack-top"><span>${esc(r.name||"")}</span><span>19" · ${r.units}U</span></div>
+      <div class="rack-body" id="rackBody">
+        <div class="unums">${nums}</div>
+        <div class="rail" style="height:${H}px"></div>
+        <div class="bay" id="bay" style="height:${H}px">${slots}${devs}<svg class="cords" id="cords"></svg></div>
+        <div class="rail" style="height:${H}px"></div>
+        <div class="unums">${nums}</div>
+      </div>
+    </div></div></div>
+    <div class="legend">
+      <span><i class="sw"></i>Port libre</span>
+      <span><i class="sw doc"></i>Prise renseignée, non brassée</span>
+      <span><i class="sw on"></i>Brassé (couleur du cordon)</span>
+      <span><i class="sw on led"></i>Port switch actif</span>
+    </div>`;
+  fitRack(); requestAnimationFrame(drawCords);
+}
+let scale=1;
+function fitRack(){
+  const sc=$("#rackScroll"), fit=$("#rackFit"), rk=$("#rackEl"); if(!sc||!rk) return;
+  const w=sc.clientWidth; scale=Math.max(0.62, Math.min(1, w/rk.offsetWidth));
+  rk.style.transform = scale<1 ? `scale(${scale})` : "";
+  fit.style.width=(rk.offsetWidth*scale)+"px"; fit.style.height=(rk.offsetHeight*scale)+"px";
+}
+function devHtml(d){
+  const r=S.racks[d.rackId];
+  const top=(r.units-(d.u+d.h-1))*UH, hpx=d.h*UH;
+  const s=S.ui.sel; const sel = s && s.type==="dev" && s.d===d.id;
+  const ears = n => `<div class="ear">${"<i></i>".repeat(Math.max(2,n*2))}</div>`;
+  let face="";
+  if (isEq(d)) face = `<div class="face">${portsHtml(d, hpx)}<span class="eqtag">${esc(EQ[d.kind].label)}</span>${d.ip?`<span class="ip">${esc(d.ip)}</span>`:""}</div>`;
+  else if (d.kind==="patch"||d.kind==="switch") face = portsHtml(d, hpx);
+  else if (d.variant==="cm") face = `<div class="face brush"></div>`;
+  else face = `<div class="face vent">${d.ip?`<span class="ip">${esc(d.ip)}</span>`:""}</div>`;
+  const sub = (d.kind==="switch"||isEq(d)) ? (d.ip||d.model||"") : (d.model||"");
+  return `<div class="dev k-${d.kind} ${sel?"sel":""}" style="top:${top}px;height:${hpx}px" data-dev="${esc(d.id)}">
+    ${ears(d.h)}
+    <div class="grip" data-grip="${esc(d.id)}" title="${S.readOnly?"":"Glisser pour déplacer · cliquer pour modifier"}"><span class="dn">${esc(d.name||"Sans nom")}</span><span class="dm">U${d.u}${d.h>1?"–"+(d.u+d.h-1):""}${sub?" · "+esc(sub):""}</span></div>
+    ${face.startsWith("<div class=\"face")?face:`<div class="face">${face}</div>`}
+    ${ears(d.h)}
+  </div>`;
+}
+function portLayout(d, hpx){
+  // renvoie [{k,x,y}] et options d'affichage
+  const out=[]; const keys=portKeys(d);
+  if (d.kind==="patch"){
+    const n=d.ports||0, perRow=24, rows=Math.max(1,Math.ceil(n/perRow));
+    const rowH=(hpx-8)/rows, showLbl = rowH>=PH+11;
+    const blockH = showLbl? PH+11 : PH;
+    for (let i=0;i<n;i++){
+      const row=Math.floor(i/perRow), col=i%perRow;
+      const x=14+col*(PW+PG)+Math.floor(col/6)*GG;
+      const y0=4+row*rowH+(rowH-blockH)/2;
+      out.push({k:String(i+1), x, y:showLbl?y0+11:y0, ly:showLbl?y0:null});
+    }
+  } else if (isEq(d)) {
+    const n=d.ports||0, perRow=24, rows=Math.max(1,Math.ceil(n/perRow)), gap=5;
+    const blockH=rows*PH+(rows-1)*gap, y0=(hpx-blockH)/2+1;
+    for (let i=0;i<n;i++){
+      const row=Math.floor(i/perRow), col=i%perRow;
+      out.push({k:String(i+1), x:14+col*(PW+PG)+Math.floor(col/6)*GG, y:y0+row*(PH+gap)});
+    }
+  } else {
+    const n=d.ports||0, cols=Math.ceil(n/2);
+    const gap=5, blockH = 2*PH+gap, y0=(hpx-blockH)/2+1;
+    for (let i=1;i<=n;i++){
+      const col=Math.ceil(i/2)-1, row=(i%2===1)?0:1;
+      const x=12+col*(PW+PG)+Math.floor(col/6)*GG;
+      out.push({k:String(i), x, y:y0+row*(PH+gap)});
+    }
+    const baseX = 12+cols*(PW+PG)+Math.floor(Math.max(0,cols-1)/6)*GG+GG*1.6;
+    const sfp=d.sfp||0;
+    for (let j=1;j<=sfp;j++){
+      const col=Math.ceil(j/2)-1, row=(j%2===1)?0:1;
+      out.push({k:"S"+j, x:baseX+col*(PW+PG+4), y:y0+row*(PH+gap), sfp:true});
+    }
+  }
+  return out;
+}
+function portsHtml(d, hpx){
+  const s=S.ui.sel, L=S.ui.link;
+  let mate=null;
+  if (s && s.type==="port") { const sd=S.devices[s.d]; if (sd) mate = isEnd(sd) ? mateOfPatch(sd,s.k) : mateOfSwitch(sd.id,s.k); }
+  return portLayout(d,hpx).map(({k,x,y,ly,sfp})=>{
+    const p=portData(d,k); let cls="port", style=`left:${x}px;top:${y}px;`, led="", title;
+    if (isEnd(d)){
+      const m=mateOfPatch(d,k);
+      if (p.jack||p.host||p.desc) cls+=" doc";
+      if (m){ const c=cordOf(d,k); cls+=" on"; style+=`--cord:${CORDS[c]};--cink:${LIGHT_CORDS.has(c)?"#16191d":"#ffffff"};`; }
+      const sw=m?S.devices[m.d]:null;
+      title = isEq(d) ? `${portLabel(d,k)}${p.desc?" · "+p.desc:""}${p.ip?" · "+p.ip:""}${sw?" → "+sw.name+" "+portLabel(sw,m.k):" · non relié"}`
+        : `Port ${portLabel(d,k)}${p.jack?" · prise "+p.jack:""}${p.host?" · "+p.host:""}${sw?" → "+sw.name+" "+portLabel(sw,m.k):" · non brassé"}`;
+      if (L && S.devices[L.d]?.kind==="switch") { cls+=" target"; if (m) cls+=" busy"; }
+    } else {
+      const m=mateOfSwitch(d.id,k);
+      if (m){ const c=linkColor(d,k); cls+=" on"; style+=`--cord:${CORDS[c]};--cink:${LIGHT_CORDS.has(c)?"#16191d":"#ffffff"};`; led=`<i class="led"></i>`; }
+      else if (p.host){ cls+=" on"; style+=`--cord:${CORDS.gris};--cink:#16191d;`; led=`<i class="led"></i>`; }
+      const pd=m?S.devices[m.d]:null, pp=pd?portData(pd,m.k):null;
+      title = `${portLabel(d,k)}${p.vlan?" · VLAN "+p.vlan:""}${pd?(pd.kind==="switch"?" ⇄ ":" ← ")+pd.name+(isEq(pd)||pd.kind==="switch"?" ":" port ")+portLabel(pd,m.k)+(pp.jack?" · prise "+pp.jack:"")+(pp.host?" · "+pp.host:""):(p.host?" · "+p.host:" · libre")}`;
+      if (L && (isEnd(S.devices[L.d]) || (S.devices[L.d]?.kind==="switch" && L.d!==d.id))) { cls+=" target"; if (m||p.host) cls+=" busy"; }
+    }
+    if (s && s.type==="port" && s.d===d.id && s.k===k) cls+=" sel";
+    if (L && L.d===d.id && L.k===k) cls+=" sel";
+    if (mate && mate.d===d.id && mate.k===k) cls+=" mate";
+    const lbl = (ly!=null) ? `<span class="plabel ${p.jack?"":"empty"}" style="left:${x}px;top:${ly}px">${esc(p.jack||"")}</span>` : "";
+    return `${lbl}<button class="${cls}" style="${style}" data-pd="${esc(d.id)}" data-pk="${esc(k)}" title="${esc(title)}" aria-label="${esc(title)}">${led}<span>${esc(sfp?"S"+k.slice(1):d.kind==="patch"?portLabel(d,k):k)}</span></button>`;
+  }).join("");
+}
+function drawCords(){
+  const svg=$("#cords"), bay=$("#bay"); if(!svg||!bay) return;
+  const r=S.racks[S.ui.rackId]; if(!r) return;
+  const W=bay.offsetWidth, Hh=bay.offsetHeight;
+  svg.setAttribute("width", W); svg.setAttribute("height", Hh);
+  svg.setAttribute("viewBox", `0 0 ${W} ${Hh}`);
+  const pos = el => { let x=0,y=0,e=el; while(e && e!==bay){ x+=e.offsetLeft; y+=e.offsetTop; e=e.offsetParent; } return {left:x, top:y, width:el.offsetWidth, bottom:y+el.offsetHeight}; };
+  const pairs=[];
+  const s=S.ui.sel;
+  for (const d of devsOf(r.id)) if (isEnd(d) || d.kind==="switch") for (const k of portKeys(d)) {
+    const m=mateOfPatch(d,k); if(!m) continue;
+    const sw=S.devices[m.d]; if(!sw || sw.rackId!==r.id) continue;
+    const involved = s && s.type==="port" && ((s.d===d.id&&s.k===k)||(s.d===m.d&&s.k===m.k));
+    if (S.ui.showCords || involved) pairs.push({a:[d.id,k], b:[m.d,m.k], c:CORDS[cordOf(d,k)], hot:involved});
+  }
+  const find = (id,k) => bay.querySelector(`.port[data-pd="${CSS.escape(id)}"][data-pk="${CSS.escape(k)}"]`);
+  let html="";
+  pairs.sort((x,y)=>(x.hot?1:0)-(y.hot?1:0)).forEach(({a,b,c,hot})=>{
+    const e1=find(...a), e2=find(...b); if(!e1||!e2) return;
+    const r1=pos(e1), r2=pos(e2);
+    const x1=r1.left+r1.width/2, x2=r2.left+r2.width/2;
+    const down = (r2.top > r1.top);
+    const y1 = down? r1.bottom : r1.top, y2 = down? r2.top : r2.bottom;
+    const dir = down?1:-1, k=Math.max(22, Math.abs(y2-y1)*0.5);
+    const dpath=`M${x1} ${y1} C${x1} ${y1+dir*k} ${x2} ${y2-dir*k} ${x2} ${y2}`;
+    html += `<path class="halo" d="${dpath}" ${hot?'style="stroke-width:8"':""}/><path class="wire" d="${dpath}" stroke="${c}" ${hot?'style="stroke-width:4"':'opacity="0.9"'}/>`;
+  });
+  svg.innerHTML=html;
+}
+
+/* ---------- tableau */
+function tableRows(){
+  const rows=[];
+  const rackIds = S.ui.tscope==="all" ? racksSorted().map(r=>r.id) : [S.ui.rackId];
+  for (const rid of rackIds) { const r=S.racks[rid]; if(!r) continue;
+    for (const d of devsOf(rid)) {
+      if (d.kind==="patch") for (const k of portKeys(d)) {
+        const p=portData(d,k), m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null, sp=sw?portData(sw,m.k):{};
+        if (!S.ui.tempty && !p.jack && !p.host && !m && !p.note) continue;
+        rows.push({d:d.id,k, rack:r.name, jack:p.jack||"", host:p.host||"", room:p.room||"", pp:d.name, pk:portLabel(d,k), cord:m?cordOf(d,k):"", sw:sw?sw.name:"", sk:sw?portLabel(sw,m.k):"", vlan:sp.vlan||"", note:p.note||""});
+      }
+      if (isEq(d)) for (const k of portKeys(d)) {
+        const p=portData(d,k), m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null, sp=sw?portData(sw,m.k):{};
+        if (!S.ui.tempty && !m && !p.desc && !p.ip && !p.note) continue;
+        rows.push({d:d.id,k, rack:r.name, jack:"", host:`${d.name} · ${portLabel(d,k)}${p.desc?" ("+p.desc+")":""}`, room:"", pp:"—", pk:"", cord:m?cordOf(d,k):"", sw:sw?sw.name:"", sk:sw?portLabel(sw,m.k):"", vlan:sp.vlan||"", note:[p.ip,p.note].filter(Boolean).join(" · "), direct:true});
+      }
+      if (d.kind==="switch") for (const k of portKeys(d)) {
+        const p0=portData(d,k);
+        if (p0.sw && S.devices[p0.sw.d]?.kind==="switch") {
+          const o=S.devices[p0.sw.d], op=portData(o,p0.sw.p);
+          rows.push({d:d.id,k, rack:r.name, jack:"", host:"Liaison switch ↔ switch", room:"", pp:d.name, pk:portLabel(d,k), cord:cordOf(d,k), sw:o.name, sk:portLabel(o,p0.sw.p), vlan:p0.vlan||op.vlan||"", note:p0.note||""});
+          continue;
+        }
+        if (mateOfSwitch(d.id,k)) continue;
+        const p=portData(d,k);
+        if (!p.host && !p.vlan && !p.note) continue;
+        rows.push({d:d.id,k, rack:r.name, jack:"", host:p.host||"", room:"", pp:"—", pk:"", cord:"", sw:d.name, sk:portLabel(d,k), vlan:p.vlan||"", note:p.note||"", direct:true});
+      }
+    }
+  }
+  const q=S.ui.tq.trim().toLowerCase();
+  return q ? rows.filter(x=>[x.jack,x.host,x.room,x.pp,x.pk,x.sw,x.sk,x.vlan,x.note,x.rack].join(" ").toLowerCase().includes(q)) : rows;
+}
+function renderTable(){
+  const body=$("#viewBody"); const rows=tableRows(); const s=S.ui.sel;
+  body.innerHTML = `
+    <div class="tblctl">
+      <input type="search" id="tq" placeholder="Filtrer le tableau…" value="${esc(S.ui.tq)}" aria-label="Filtrer le tableau">
+      <select id="tscope" aria-label="Étendue"><option value="rack" ${S.ui.tscope==="rack"?"selected":""}>Cette baie</option><option value="all" ${S.ui.tscope==="all"?"selected":""}>Toutes les baies</option></select>
+      <label class="chk"><input type="checkbox" id="tempty" ${S.ui.tempty?"checked":""}> Afficher les ports vides</label>
+      <span class="tcount">${rows.length} ligne${rows.length>1?"s":""}</span>
+    </div>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Prise</th><th>Poste / équipement</th><th>Local</th><th>Panneau · port</th><th>Cordon</th><th>Switch · port</th><th>VLAN</th>${S.ui.tscope==="all"?"<th>Baie</th>":""}<th>Note</th></tr></thead>
+      <tbody>${rows.map(x=>`<tr data-pd="${esc(x.d)}" data-pk="${esc(x.k)}" class="${s&&s.type==="port"&&s.d===x.d&&s.k===x.k?"sel":""}">
+        <td>${x.jack?`<span class="jack">${esc(x.jack)}</span>`:'<span class="dim">—</span>'}</td>
+        <td>${esc(x.host)||'<span class="dim">—</span>'}</td>
+        <td>${esc(x.room)}</td>
+        <td class="m">${x.direct?'<span class="dim">en direct</span>':esc(x.pp)+" · "+esc(x.pk)}</td>
+        <td>${x.cord?`<span class="cdot" style="background:${CORDS[x.cord]}"></span>${esc(x.cord)}`:""}</td>
+        <td class="m">${x.sw?esc(x.sw)+" · "+esc(x.sk):'<span class="dim">non brassé</span>'}</td>
+        <td class="m">${esc(x.vlan)}</td>
+        ${S.ui.tscope==="all"?`<td>${esc(x.rack)}</td>`:""}
+        <td>${esc(x.note)}</td></tr>`).join("") || `<tr><td colspan="9" class="dim" style="padding:16px">Aucun port renseigné. Cliquez sur un port dans la vue Baie, ou utilisez la saisie rapide d'un panneau.</td></tr>`}</tbody>
+    </table></div>`;
+}
+
+/* ---------- fiche de droite */
+function renderInsp(force){
+  const el=$("#insp");
+  const a=document.activeElement;
+  if (!force && el.contains(a) && a.matches("input,textarea,select")) { pendingInsp=true; return; }
+  pendingInsp=false;
+  const s=S.ui.sel;
+  let html="";
+  if (!S.loaded) html="";
+  else if (s?.type==="port" && S.devices[s.d]) html=inspPort(S.devices[s.d], s.k);
+  else if (s?.type==="dev" && S.devices[s.d]) html=inspDev(S.devices[s.d]);
+  else if (s?.type==="new" && S.racks[S.ui.rackId]) html=inspNew(s.u);
+  else if (S.racks[S.ui.rackId]) html=inspRack(S.racks[S.ui.rackId]);
+  el.innerHTML=html;
+  el.classList.toggle("closed", !S.ui.inspOpen || !html);
+}
+const ro = () => S.readOnly ? "disabled" : "";
+const fld = (lbl, id, val, attrs="", hint="") => `<div class="fld"><label for="${id}">${lbl}</label><input id="${id}" value="${esc(val)}" ${attrs} ${ro()}>${hint?`<span class="hint">${hint}</span>`:""}</div>`;
+const closeBtn = `<button class="btn ghost sm iclose" data-act="insp-close" aria-label="Fermer">Fermer</button>`;
+
+function inspRack(r){
+  const st=rackStats(r.id), devs=devsOf(r.id);
+  const c=S.ui.confirm===("rack:"+r.id);
+  return `<div class="ihead"><div><div class="eyebrow">Baie</div><h2>${esc(r.name||"Baie sans nom")}</h2></div>${closeBtn}</div>
+    <div class="kpis">
+      <div class="kpi"><b>${st.units-st.usedU}U</b><span>libres sur ${st.units}</span></div>
+      <div class="kpi"><b>${st.pT-st.pU}</b><span>ports panneau libres</span></div>
+      <div class="kpi"><b>${st.sT-st.sU}</b><span>ports switch libres</span></div>
+    </div>
+    <div class="fields">
+      ${fld("Nom de la baie","r-name",r.name,`data-rf="name"`)}
+      ${fld("Emplacement","r-site",r.site,`data-rf="site" placeholder="ex. Local technique RDC"`)}
+      ${fld("Hauteur (U)","r-units",r.units,`data-rf="units" type="number" min="4" max="60" inputmode="numeric"`, "Baies courantes : 12U, 24U, 42U, 47U")}
+    </div>
+    <div class="box"><h3>Équipements (du haut vers le bas)</h3>
+      <div class="devlist">${devs.map(d=>{
+        const n = d.kind==="patch" ? `${portKeys(d).filter(k=>mateOfPatch(d,k)).length}/${d.ports} brassés` : isEq(d) ? `${portKeys(d).filter(k=>mateOfPatch(d,k)).length}/${d.ports||0} reliés` : d.kind==="switch" ? `${portKeys(d).filter(k=>mateOfSwitch(d.id,k)||portData(d,k).host).length}/${portKeys(d).length} actifs` : "";
+        return `<button data-act="dev-select" data-id="${esc(d.id)}"><span class="u">U${d.u}${d.h>1?"–"+(d.u+d.h-1):""}</span><span class="nm">${esc(d.name)}</span><span class="ct">${n}</span></button>`;
+      }).join("") || `<span class="dim">Baie vide. Cliquez sur un emplacement libre ou sur « + Équipement ».</span>`}</div>
+    </div>
+    ${S.readOnly?"":(c?`<div class="confirm"><span>Supprimer la baie <b>${esc(r.name)}</b> et ses ${devs.length} équipement(s) ? Les brassages vers ces switchs depuis d'autres baies seront retirés.</span><div class="row"><button class="btn sm danger fill" data-act="rack-del-ok">Supprimer définitivement</button><button class="btn sm" data-act="confirm-cancel">Annuler</button></div></div>`
+      :`<div><button class="btn sm danger" data-act="rack-del">Supprimer la baie</button></div>`)}`;
+}
+
+function inspNew(u){
+  const r=S.racks[S.ui.rackId]; const pr=PRESETS.find(p=>p.key===S.ui.newPreset)||PRESETS[0];
+  const base = pr.kind==="patch"?"PP-":pr.kind==="switch"?"SW-":EQ[pr.kind]?EQ[pr.kind].base:"";
+  const cnt = Object.values(S.devices).filter(d=>d.kind===pr.kind).length+1;
+  const defName = pr.name || base+String(cnt).padStart(2,"0");
+  let uu = u ?? firstFree(r.id, pr.h);
+  if (uu!=null && !fits(r.id, uu, pr.h).ok) { const f=firstFree(r.id,pr.h); uu = f; }
+  return `<div class="ihead"><div><div class="eyebrow">${esc(r.name)}</div><h2>Ajouter un équipement</h2></div>${closeBtn}</div>
+    <div class="presets">${PRESETS.map(p=>`<button class="preset ${p.key===pr.key?"on":""}" data-act="preset" data-k="${p.key}"><span class="ico ${p.kind}"></span><span><b>${esc(p.label)}</b><br><span class="dim" style="font-size:12.5px">${esc(p.sub)}</span></span></button>`).join("")}</div>
+    <div class="fields two">
+      ${fld("Nom","n-name",defName,`placeholder="ex. PP-02"`)}
+      ${fld("Position (U du bas)","n-u",uu??"",`type="number" min="1" max="${r.units}" inputmode="numeric"`)}
+    </div>
+    ${uu==null?`<div class="errmsg">Plus assez de place libre dans cette baie pour un équipement de ${pr.h}U.</div>`:""}
+    <div id="newErr" class="errmsg" hidden></div>
+    <div class="row"><button class="btn pri" data-act="dev-create" ${uu==null?"disabled":""}>Ajouter à la baie</button><button class="btn" data-act="confirm-cancel-new">Annuler</button></div>`;
+}
+
+function inspDev(d){
+  const r=S.racks[d.rackId]; const c=S.ui.confirm===("dev:"+d.id);
+  const kindLbl = KIND_LABEL[d.kind]||"Équipement";
+  let quick="";
+  if (d.kind==="patch") {
+    quick = `<div class="box"><h3>Saisie rapide des ports</h3>
+      <div class="quick"><table><thead><tr><th>Port</th><th>Prise</th><th>Poste</th><th>Switch</th></tr></thead><tbody>
+      ${portKeys(d).map(k=>{ const p=portData(d,k), m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null;
+        return `<tr><td>${esc(portLabel(d,k))}</td><td><input value="${esc(p.jack||"")}" data-qd="${esc(d.id)}" data-qk="${k}" data-qf="jack" aria-label="Prise port ${esc(portLabel(d,k))}" ${ro()}></td><td><input value="${esc(p.host||"")}" data-qd="${esc(d.id)}" data-qk="${k}" data-qf="host" aria-label="Poste port ${esc(portLabel(d,k))}" ${ro()}></td><td><button class="lk ${sw?"":"no"}" data-act="goto-port" data-d="${esc(d.id)}" data-k="${k}">${sw?esc(sw.name)+" · "+esc(portLabel(sw,m.k)):"brasser…"}</button></td></tr>`; }).join("")}
+      </tbody></table></div></div>`;
+  } else if (isEq(d)) {
+    quick = `<div class="box"><h3>Ports réseau</h3>
+      <div class="quick"><table><thead><tr><th>Port</th><th>Usage</th><th>Switch</th></tr></thead><tbody>
+      ${portKeys(d).map(k=>{ const p=portData(d,k), m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null;
+        return `<tr><td>${esc(portLabel(d,k))}</td><td><input value="${esc(p.desc||"")}" data-qd="${esc(d.id)}" data-qk="${k}" data-qf="desc" placeholder="ex. LAN, iSCSI, WAN" aria-label="Usage ${esc(portLabel(d,k))}" ${ro()}></td><td><button class="lk ${sw?"":"no"}" data-act="goto-port" data-d="${esc(d.id)}" data-k="${k}">${sw?esc(sw.name)+" · "+esc(portLabel(sw,m.k)):"relier…"}</button></td></tr>`; }).join("")}
+      </tbody></table></div></div>`;
+  } else if (d.kind==="switch") {
+    quick = `<div class="box"><h3>Saisie rapide des ports</h3>
+      <div class="quick"><table><thead><tr><th>Port</th><th>VLAN</th><th>Brassé depuis / équipement direct</th></tr></thead><tbody>
+      ${portKeys(d).map(k=>{ const p=portData(d,k), m=mateOfSwitch(d.id,k), pd=m?S.devices[m.d]:null, pp=pd?portData(pd,m.k):{};
+        return `<tr><td>${esc(portLabel(d,k))}</td><td><input value="${esc(p.vlan||"")}" data-qd="${esc(d.id)}" data-qk="${k}" data-qf="vlan" aria-label="VLAN ${esc(portLabel(d,k))}" style="min-width:56px" ${ro()}></td><td>${pd?`<button class="lk" data-act="goto-port" data-d="${esc(pd.id)}" data-k="${esc(m.k)}">${esc(pd.name)} · ${esc(portLabel(pd,m.k))}${pp.host?" — "+esc(pp.host):pp.jack?" — "+esc(pp.jack):""}</button>`:`<input value="${esc(p.host||"")}" data-qd="${esc(d.id)}" data-qk="${k}" data-qf="host" placeholder="—" aria-label="Équipement direct ${esc(portLabel(d,k))}" ${ro()}>`}</td></tr>`; }).join("")}
+      </tbody></table></div></div>`;
+  }
+  return `<div class="ihead"><div><div class="eyebrow">${kindLbl} · ${esc(r?.name)}</div><h2>${esc(d.name||"Sans nom")}</h2></div>${closeBtn}</div>
+    <div class="fields two">
+      ${fld("Nom","d-name",d.name,`data-df="name"`)}
+      ${fld("Modèle","d-model",d.model,`data-df="model"`)}
+      ${d.kind!=="patch"?fld("Adresse IP","d-ip",d.ip,`data-df="ip" placeholder="ex. 192.168.1.2" inputmode="decimal"`):""}
+      ${fld("Position (U du bas)","d-u",d.u,`data-df="u" type="number" min="1" max="${r.units}" inputmode="numeric"`)}
+      ${fld("Hauteur (U)","d-h",d.h,`data-df="h" type="number" min="1" max="10" inputmode="numeric"`)}
+      ${(d.kind==="other"&&d.variant!=="cm")||isEq(d)?`<div class="fld"><label for="d-kind">Type</label><select id="d-kind" data-df="kind" ${ro()}>${["nas","server","router","other"].map(x=>`<option value="${x}" ${d.kind===x?"selected":""}>${x==="other"?"Autre (sans ports)":KIND_LABEL[x]}</option>`).join("")}</select></div>`:""}
+      ${d.kind==="switch"?fld("Ports RJ45","d-ports",d.ports,`data-df="ports" type="number" min="1" max="288" inputmode="numeric"`):""}
+      ${isEq(d)?fld("Ports réseau","d-ports",d.ports||0,`data-df="ports" type="number" min="1" max="48" inputmode="numeric"`):""}
+      ${isEq(d)?fld("Préfixe des ports","d-pp",d.portPrefix ?? EQ[d.kind].prefix,`data-df="portPrefix" placeholder="ex. LAN, eth, Gi0/"`,"Affiché devant le numéro"):""}
+      ${d.kind==="patch"?fld("Premier port","d-start",d.start||1,`data-df="start" type="number" min="1" max="9999" inputmode="numeric"`):""}
+      ${d.kind==="patch"?fld("Dernier port","d-last",(parseInt(d.start,10)||1)+(d.ports||0)-1,`data-df="last" type="number" min="1" max="9999" inputmode="numeric"`):""}
+      ${d.kind==="switch"?fld("Préfixe des ports","d-pp",d.portPrefix,`data-df="portPrefix" placeholder="ex. Gi1/0/"`,"Affiché devant le numéro"):""}
+      ${d.kind==="switch"?fld("Ports SFP","d-sfp",d.sfp||0,`data-df="sfp" type="number" min="0" max="16" inputmode="numeric"`):""}
+      ${d.kind==="switch"?fld("Préfixe SFP","d-sfpp",d.sfpPrefix,`data-df="sfpPrefix" placeholder="ex. Te1/1/"`):""}
+    </div>
+    <div id="devErr" class="errmsg" hidden></div>
+    ${S.readOnly?"":`<div class="row"><button class="btn sm" data-act="dev-move" data-dir="1">▲ Monter d'1U</button><button class="btn sm" data-act="dev-move" data-dir="-1">▼ Descendre d'1U</button></div>`}
+    ${quick}
+    ${S.readOnly?"":(c?`<div class="confirm"><span>Supprimer <b>${esc(d.name)}</b> ? ${d.kind==="switch"?"Les brassages des panneaux et équipements vers ce switch seront retirés.":d.kind==="patch"||isEq(d)?"Les informations de ses ports seront perdues.":""}</span><div class="row"><button class="btn sm danger fill" data-act="dev-del-ok">Supprimer</button><button class="btn sm" data-act="confirm-cancel">Annuler</button></div></div>`
+      :`<div><button class="btn sm danger" data-act="dev-del">Supprimer l'équipement</button></div>`)}`;
+}
+
+function traceHtml(d,k){
+  // chaîne complète : poste → prise → panneau → cordon → switch → VLAN
+  let pd, pk, sw, sk;
+  if (isEnd(d)){ pd=d; pk=k; const m=mateOfPatch(d,k); if(m){ sw=S.devices[m.d]; sk=m.k; } }
+  else { sw=d; sk=k; const m=mateOfSwitch(d.id,k); if(m){ pd=S.devices[m.d]; pk=m.k; } }
+  const pp = pd?portData(pd,pk):{}, sp = sw?portData(sw,sk):{};
+  const cur = isEnd(d) ? "pp" : "sw";
+  const node = (key, n, k2, v, on, act) => `<li class="${on?"on":""} ${cur===key?"cur":""}"><span class="nd">${n}</span><span><div class="k">${k2}</div>${act&&v?`<button class="v" ${act}>${v}</button>`:`<div class="v ${v?"":"none"}">${v||"non renseigné"}</div>`}</span></li>`;
+  const cord = pd&&sw ? cordOf(pd,pk) : null;
+  const direct = !pd && sp.host;
+  if (pd && pd.kind==="switch") {
+    const c2=linkColor(d,k), op=portData(pd,pk);
+    return `<ol class="trace" style="--trace:${CORDS[c2]}">
+    ${node("sw",1,"Ce switch",`${esc(d.name)} · <span class="mono">${esc(portLabel(d,k))}</span>`,true)}
+    ${node("cord",2,"Cordon",`<span class="cdot" style="background:${CORDS[c2]}"></span>${esc(c2)}`,true)}
+    ${node("pp",3,"Switch relié",`${esc(pd.name)} · <span class="mono">${esc(portLabel(pd,pk))}</span>${pd.rackId!==S.ui.rackId?" ("+esc(S.racks[pd.rackId]?.name)+")":""}`,true,`data-act="goto-port" data-d="${esc(pd.id)}" data-k="${esc(pk)}"`)}
+    ${node("vlan",4,"VLAN",esc([sp.vlan,op.vlan&&op.vlan!==sp.vlan?"en face : "+op.vlan:""].filter(Boolean).join(" · ")),!!(sp.vlan||op.vlan))}
+  </ol>`;
+  }
+  if (pd && isEq(pd)) return `<ol class="trace" style="--trace:${cord?CORDS[cord]:"var(--line)"}">
+    ${node("pp",1,KIND_LABEL[pd.kind],`${esc(pd.name)} · <span class="mono">${esc(portLabel(pd,pk))}</span>${pp.desc?" · "+esc(pp.desc):""}${pd.rackId!==S.ui.rackId?" ("+esc(S.racks[pd.rackId]?.name)+")":""}`,true, cur!=="pp"?`data-act="goto-port" data-d="${esc(pd.id)}" data-k="${esc(pk)}"`:"")}
+    ${node("cord",2,"Cordon",cord?`<span class="cdot" style="background:${CORDS[cord]}"></span>${esc(cord)}`:"",!!cord)}
+    ${node("sw",3,"Switch",sw?`${esc(sw.name)} · <span class="mono">${esc(portLabel(sw,sk))}</span>${sw.rackId!==S.ui.rackId?" ("+esc(S.racks[sw.rackId]?.name)+")":""}`:"",!!sw, sw&&cur!=="sw"?`data-act="goto-port" data-d="${esc(sw.id)}" data-k="${esc(sk)}"`:"")}
+    ${node("vlan",4,"VLAN",esc(sp.vlan||""),!!sp.vlan)}
+  </ol>`;
+  return `<ol class="trace" style="--trace:${cord?CORDS[cord]:"var(--line)"}">
+    ${direct ? node("host",1,"Équipement en direct",esc(sp.host),true) : node("host",1,"Poste / équipement",esc([pp.host,pp.room].filter(Boolean).join(" · ")),!!pp.host)}
+    ${direct ? "" : node("jack",2,"Prise murale",pp.jack?`<span class="jack">${esc(pp.jack)}</span>`:"",!!pp.jack)}
+    ${direct ? "" : node("pp",3,"Panneau de brassage",pd?`${esc(pd.name)} · port ${esc(portLabel(pd,pk))}${pd.rackId!==S.ui.rackId?" ("+esc(S.racks[pd.rackId]?.name)+")":""}`:"",!!pd, pd&&cur!=="pp"?`data-act="goto-port" data-d="${esc(pd.id)}" data-k="${esc(pk)}"`:"")}
+    ${direct ? "" : node("cord",4,"Cordon",cord?`<span class="cdot" style="background:${CORDS[cord]}"></span>${esc(cord)}`:"",!!cord)}
+    ${node("sw",direct?2:5,"Switch",sw?`${esc(sw.name)} · <span class="mono">${esc(portLabel(sw,sk))}</span>${sw.rackId!==S.ui.rackId?" ("+esc(S.racks[sw.rackId]?.name)+")":""}`:"",!!sw, sw&&cur!=="sw"?`data-act="goto-port" data-d="${esc(sw.id)}" data-k="${esc(sk)}"`:"")}
+    ${node("vlan",direct?3:6,"VLAN",esc(sp.vlan||""),!!sp.vlan)}
+  </ol>`;
+}
+function inspPort(d,k){
+  const r=S.racks[d.rackId]; const p=portData(d,k); const keys=portKeys(d); const i=keys.indexOf(k);
+  const nav = `<div class="row sp"><button class="btn sm" data-act="port-nav" data-dir="-1" ${i<=0?"disabled":""}>← ${i>0?esc(portLabel(d,keys[i-1])):""}</button><button class="btn sm ghost" data-act="dev-select" data-id="${esc(d.id)}">Fiche ${esc(d.name)}</button><button class="btn sm" data-act="port-nav" data-dir="1" ${i>=keys.length-1?"disabled":""}>${i<keys.length-1?esc(portLabel(d,keys[i+1])):""} →</button></div>`;
+  const switches = Object.values(S.devices).filter(x=>x.kind==="switch").sort((a,b)=>byNum(a.name||"",b.name||""));
+  const patches = Object.values(S.devices).filter(isEnd).sort((a,b)=>(a.kind==="patch"?0:1)-(b.kind==="patch"?0:1) || byNum(a.name||"",b.name||""));
+  let fields, linkBox;
+  if (isEnd(d)){
+    const m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null;
+    fields = isEq(d) ? `<div class="fields">
+      ${fld("Usage","f-desc",p.desc,`data-f="desc" placeholder="ex. LAN, iSCSI, management, WAN" autocomplete="off"`)}
+      ${fld("Adresse IP de l'interface","f-ip",p.ip,`data-f="ip" placeholder="ex. 192.168.1.10" inputmode="decimal" autocomplete="off"`)}
+      <div class="fld"><label for="f-color">Couleur du cordon</label><select id="f-color" data-f="color" ${ro()}>${Object.keys(CORDS).map(c=>`<option value="${c}" ${cordOf(d,k)===c?"selected":""}>${c}</option>`).join("")}</select></div>
+      <div class="fld"><label for="f-note">Note</label><textarea id="f-note" data-f="note" ${ro()}>${esc(p.note||"")}</textarea></div>
+    </div>` : `<div class="fields">
+      ${fld("Prise murale","f-jack",p.jack,`data-f="jack" placeholder="ex. B-12" autocomplete="off"`, "Le repère inscrit sur la prise du bureau")}
+      ${fld("Poste / équipement","f-host",p.host,`data-f="host" placeholder="ex. PC-COMPTA-03, imprimante…" autocomplete="off"`)}
+      ${fld("Local / bureau","f-room",p.room,`data-f="room" placeholder="ex. Bureau 104" autocomplete="off"`)}
+      <div class="fld"><label for="f-color">Couleur du cordon</label><select id="f-color" data-f="color" ${ro()}>${Object.keys(CORDS).map(c=>`<option value="${c}" ${cordOf(d,k)===c?"selected":""}>${c}</option>`).join("")}</select></div>
+      <div class="fld"><label for="f-note">Note</label><textarea id="f-note" data-f="note" ${ro()}>${esc(p.note||"")}</textarea></div>
+    </div>`;
+    const selSw = S.ui.pickSw && S.devices[S.ui.pickSw] ? S.devices[S.ui.pickSw] : (sw || switches.find(x=>x.rackId===d.rackId) || switches[0]);
+    linkBox = `<div class="box"><h3>${isEq(d)?"Relié au switch":"Brassage vers le switch"}</h3>
+      ${sw?`<div class="row sp"><span class="linkcur">${esc(sw.name)} · ${esc(portLabel(sw,m.k))}</span>${S.readOnly?"":`<button class="btn sm danger" data-act="unlink">Débrasser</button>`}</div>`:`<span class="dim">Ce port n'est ${isEq(d)?"relié":"brassé"} sur aucun switch.</span>`}
+      ${S.readOnly?"":(switches.length?`<button class="btn sm pri" data-act="link-start">${sw?"Changer : cliquer un port switch":(isEq(d)?"Relier":"Brasser")+" : cliquer un port switch"}</button>
+      <div class="row"><select id="pickSw" aria-label="Switch">${switches.map(x=>`<option value="${esc(x.id)}" ${selSw&&x.id===selSw.id?"selected":""}>${esc(x.name)}${x.rackId!==d.rackId?" ("+esc(S.racks[x.rackId]?.name)+")":""}</option>`).join("")}</select>
+      <select id="pickPort" aria-label="Port du switch">${selSw?portKeys(selSw).map(x=>{ const o=mateOfSwitch(selSw.id,x); const own=o&&o.d===d.id&&o.k===k; const h=portData(selSw,x).host; return `<option value="${esc(x)}" ${own?"selected":""}>${esc(portLabel(selSw,x))}${o&&!own?" — occupé ("+esc(S.devices[o.d]?.name)+"·"+esc(ppLabel(o.d,o.k))+")":h?" — "+esc(h):""}</option>`; }).join(""):""}</select>
+      <button class="btn sm" data-act="link-pick">${isEq(d)?"Relier":"Brasser"}</button></div>`:`<span class="dim">Ajoutez d'abord un switch dans une baie.</span>`)}
+    </div>`;
+  } else {
+    const m=mateOfSwitch(d.id,k), pd=m?S.devices[m.d]:null;
+    const cands = [...patches, ...switches.filter(x=>x.id!==d.id)];
+    fields = `<div class="fields">
+      ${fld("VLAN","f-vlan",p.vlan,`data-f="vlan" placeholder="ex. 10, ou trunk" autocomplete="off"`)}
+      ${pd?`<div class="fld"><label for="f-color">Couleur du cordon</label><select id="f-color" data-f="color" ${ro()}>${Object.keys(CORDS).map(c=>`<option value="${c}" ${linkColor(d,k)===c?"selected":""}>${c}</option>`).join("")}</select></div>`:""}
+      ${pd?"":fld("Équipement branché en direct","f-host",p.host,`data-f="host" placeholder="ex. uplink SW-02, serveur, borne Wi-Fi" autocomplete="off"`,"Si le câble ne passe pas par un panneau de brassage")}
+      <div class="fld"><label for="f-note">Note</label><textarea id="f-note" data-f="note" ${ro()}>${esc(p.note||"")}</textarea></div>
+    </div>`;
+    const selPp = S.ui.pickPp && S.devices[S.ui.pickPp] ? S.devices[S.ui.pickPp] : (pd || patches.find(x=>x.rackId===d.rackId) || cands[0]);
+    const grp = (lbl,list) => list.length ? `<optgroup label="${lbl}">${list.map(x=>`<option value="${esc(x.id)}" ${selPp&&x.id===selPp.id?"selected":""}>${esc(x.name)}${isEq(x)?" ("+KIND_LABEL[x.kind]+")":""}${x.rackId!==d.rackId?" ("+esc(S.racks[x.rackId]?.name)+")":""}</option>`).join("")}</optgroup>` : "";
+    linkBox = `<div class="box"><h3>Relié à</h3>
+      ${pd?`<div class="row sp"><span class="linkcur">${pd.kind==="switch"?"⇄ ":""}${esc(pd.name)} · ${isEq(pd)||pd.kind==="switch"?"":"port "}${esc(portLabel(pd,m.k))}</span>${S.readOnly?"":`<button class="btn sm danger" data-act="unlink">Débrancher</button>`}</div>`:`<span class="dim">Rien n'est relié à ce port.</span>`}
+      ${S.readOnly?"":(cands.length?`<button class="btn sm pri" data-act="link-start">${pd?"Changer : cliquer un autre port":"Relier : cliquer un port de panneau, d'équipement ou de switch"}</button>
+      <div class="row"><select id="pickPp" aria-label="Panneau, équipement ou switch">${grp("Panneaux de brassage",patches.filter(x=>x.kind==="patch"))}${grp("Équipements",patches.filter(isEq))}${grp("Switchs (liaison / cascade)",switches.filter(x=>x.id!==d.id))}</select>
+      <select id="pickPort" aria-label="Port">${selPp?portKeys(selPp).map(x=>{ const o=selPp.kind==="switch"?mateOfSwitch(selPp.id,x):mateOfPatch(selPp,x); const own=o&&o.d===d.id&&o.k===k; const pp=portData(selPp,x); return `<option value="${esc(x)}" ${own?"selected":""}>${selPp.kind==="patch"?"Port ":""}${esc(portLabel(selPp,x))}${pp.jack?" · "+esc(pp.jack):pp.desc?" · "+esc(pp.desc):""}${o&&!own?" — occupé ("+esc(S.devices[o.d]?.name)+")":pp.host?" — "+esc(pp.host):""}</option>`; }).join(""):""}</select>
+      <button class="btn sm" data-act="link-pick">Relier</button></div>`:`<span class="dim">Ajoutez d'abord un panneau, un équipement ou un autre switch.</span>`)}
+    </div>`;
+  }
+  return `<div class="ihead"><div><div class="eyebrow">${d.kind==="patch"?"Port de panneau":isEq(d)?"Port "+KIND_LABEL[d.kind]:"Port de switch"} · ${esc(r?.name)}</div><h2>${esc(d.name)} · <span class="mono">${esc(d.kind==="patch"?"port "+portLabel(d,k):portLabel(d,k))}</span></h2></div>${closeBtn}</div>
+    ${traceHtml(d,k)}
+    ${fields}
+    ${linkBox}
+    ${nav}`;
+}
+
+/* ============ actions ============ */
+function select(sel){ S.ui.sel=sel; S.ui.confirm=null; S.ui.pickSw=null; S.ui.pickPp=null; S.ui.inspOpen=!!sel || S.ui.inspOpen; renderMain(); renderInsp(true); }
+function gotoPort(id,k,flash){
+  const d=S.devices[id]; if(!d) return;
+  if (d.rackId!==S.ui.rackId){ S.ui.rackId=d.rackId; lsSet(LSK+":rack", d.rackId); renderSide(); }
+  S.ui.inspOpen=true;
+  select({type:"port", d:id, k});
+  if (S.ui.view==="rack") requestAnimationFrame(()=>{
+    const e=document.querySelector(`.port[data-pd="${CSS.escape(id)}"][data-pk="${CSS.escape(k)}"]`);
+    if (e){ e.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); if(flash){ e.classList.add("flash"); } }
+  });
+}
+function setPortField(id,k,f,v){
+  if (!S.devices[id]) return;
+  if (f==="color" && S.devices[id].kind==="switch") { const o=linkOwner(S.devices[id],k); if (o && o.d!==id) { id=o.d; k=o.k; } }
+  v=(v??"").trim();
+  if ((portData(S.devices[id],k)[f]||"")===v) return;
+  const d=clone(S.devices[id]); d.p=d.p||{}; const p=d.p[k]||{};
+  if (v) p[f]=v; else delete p[f];
+  if (Object.keys(p).length) d.p[k]=p; else delete d.p[k];
+  saveDev(d);
+}
+// Retire le cordon branché sur un port, quel que soit le côté qui l'enregistre
+function clearLinkAt(get, id, k){
+  const own = (get(id).p||{})[k];
+  if (own?.sw) { delete own.sw; return; }
+  const m = linkIdx.get(id+":"+k);
+  if (m) { const o=get(m.d); if (o.p?.[m.k]) delete o.p[m.k].sw; }
+}
+function changeSet(){
+  const changes = new Map();
+  const get = id => { if(!changes.has(id)) changes.set(id, clone(S.devices[id])); return changes.get(id); };
+  return {changes, get, commit(){ for (const x of changes.values()) { if (x.p) for (const kk of Object.keys(x.p)) if (!Object.keys(x.p[kk]).length) delete x.p[kk]; saveDev(x); } }};
+}
+function doTrunk(aId, ak, bId, bk){
+  const cs=changeSet(); const {get}=cs;
+  clearLinkAt(get, aId, ak); clearLinkAt(get, bId, bk);
+  const a=get(aId); a.p=a.p||{}; const pa=a.p[ak]||{}; pa.sw={d:bId, p:bk}; if(!pa.color) pa.color=DEFAULT_CORD; delete pa.host; a.p[ak]=pa;
+  const b=get(bId); if (b.p?.[bk]?.host) delete b.p[bk].host;
+  cs.commit();
+  const A=S.devices[aId], B=S.devices[bId];
+  toast(`Liaison switch : ${A.name} · ${portLabel(A,ak)} ⇄ ${B.name} · ${portLabel(B,bk)}`);
+}
+function doLink(patchId, pk, swId, sk){
+  // un port switch ne reçoit qu'un seul cordon : on retire l'ancien brassage éventuel
+  const changes = new Map();
+  const get = id => { if(!changes.has(id)) changes.set(id, clone(S.devices[id])); return changes.get(id); };
+  const prev = mateOfSwitch(swId, sk);
+  if (prev && !(prev.d===patchId && prev.k===pk)) clearLinkAt(get, swId, sk);
+  const d=get(patchId); d.p=d.p||{}; const p=d.p[pk]||{}; p.sw={d:swId, p:sk}; if(!p.color) p.color=DEFAULT_CORD; d.p[pk]=p;
+  // un port switch brassé n'a plus d'« équipement en direct »
+  const sw = changes.has(swId) ? changes.get(swId) : S.devices[swId];
+  if (sw.p?.[sk]?.host) { const s2=get(swId); delete s2.p[sk].host; if(!Object.keys(s2.p[sk]).length) delete s2.p[sk]; }
+  for (const x of changes.values()) saveDev(x);
+  const swd=S.devices[swId];
+  toast(`${isEq(S.devices[patchId])?"Relié":"Brassé"} : ${S.devices[patchId].name} · ${ppLabel(patchId,pk)} → ${swd.name} · ${portLabel(swd,sk)}`);
+}
+function unlinkAt(id,k){
+  const d=S.devices[id];
+  const cs=changeSet(); clearLinkAt(cs.get, id, k); cs.commit();
+  toast("Cordon retiré");
+}
+function tryLink(target){
+  const L=S.ui.link; if(!L) return;
+  const src=S.devices[L.d], tgt=S.devices[target.d];
+  if (!src||!tgt) return;
+  if (src.kind==="switch" && tgt.kind==="switch") {
+    const other = mateOfSwitch(tgt.id, target.k);
+    const otherIsSelf = other && other.d===src.id && other.k===L.k;
+    if ((other || portData(tgt,target.k).host) && !otherIsSelf && !L.busy && other) { S.ui.link={...L, busy:{trunk:true, a:{d:src.id,k:L.k}, b:{d:tgt.id,k:target.k}, other}}; renderMain(); return; }
+    doTrunk(src.id, L.k, tgt.id, target.k);
+    S.ui.link=null; gotoPort(src.id, L.k); return;
+  }
+  const patch = isEnd(src) ? {d:src.id,k:L.k} : {d:tgt.id,k:target.k};
+  const swp = src.kind==="switch" ? {d:src.id,k:L.k} : {d:tgt.id,k:target.k};
+  const other = isEnd(src) ? mateOfSwitch(swp.d, swp.k) : mateOfPatch(S.devices[patch.d], patch.k);
+  const otherIsSelf = other && ((isEnd(src) && other.d===patch.d && other.k===patch.k) || (src.kind==="switch" && other.d===swp.d && other.k===swp.k));
+  if (other && !otherIsSelf && !L.busy) { S.ui.link={...L, busy:{patch, swp, other}}; renderMain(); return; }
+  // si le panneau était déjà brassé ailleurs, doLink écrase simplement son lien
+  doLink(patch.d, patch.k, swp.d, swp.k);
+  S.ui.link=null;
+  gotoPort(src.id, L.k);
+}
+function deleteDevice(id){
+  const d=S.devices[id]; if(!d) return;
+  if (d.kind==="switch") for (const x of Object.values(S.devices)) if (x.id!==id && x.p) {
+    let ch=false; const c=clone(x);
+    for (const k of Object.keys(c.p)) if (c.p[k].sw?.d===id) { delete c.p[k].sw; ch=true; }
+    if (ch) saveDev(c);
+  }
+  S.ui.sel=null; S.ui.confirm=null; delDev(id); toast(`${d.name} supprimé`);
+}
+function updateDevField(d, f, raw){
+  const x=clone(d); const num=["u","h","ports","sfp","start","last"].includes(f);
+  const errEl=$("#devErr");
+  if (f==="kind") {
+    // NAS / Serveur / Routeur / Autre : les ports et leurs liaisons sont conservés tant qu'on reste sur un type à ports
+    x.kind = raw;
+    if (EQ[raw]) { if (!x.ports) x.ports = EQ[raw].ports; x.p = x.p||{}; if (x.portPrefix==null || Object.values(EQ).some(e=>e.prefix===x.portPrefix)) x.portPrefix = EQ[raw].prefix; }
+    else { for (const k of Object.keys(x.p||{})) delete x.p[k].sw; }
+    saveDev(x); return;
+  }
+  let v = num ? parseInt(raw,10) : raw.trim();
+  if (num && (isNaN(v) || v<(f==="sfp"?0:1))) { if(errEl){errEl.textContent="Entrez un nombre valide."; errEl.hidden=false;} return; }
+  if (f==="ports" && isEq(x) && v>48) { if(errEl){errEl.textContent="48 ports maximum."; errEl.hidden=false;} return; }
+  if (f==="u"||f==="h"){
+    const u = f==="u"?v:x.u, h=f==="h"?v:x.h;
+    const ok=fits(x.rackId,u,h,x.id);
+    if(!ok.ok){ if(errEl){errEl.textContent=ok.msg; errEl.hidden=false;} return; }
+  }
+  if (f==="last") {
+    // Dernier port saisi : on en déduit le nombre de ports (premier → dernier inclus)
+    const first = parseInt(x.start,10)||1, n = v - first + 1;
+    if (n<1 || n>288) { if(errEl){errEl.textContent=`Le dernier port doit être compris entre ${first} et ${first+287}.`; errEl.hidden=false;} return; }
+    x.ports = n; dropLinksBeyond(x); saveDev(x); return;
+  }
+  if (f==="portPrefix" && isEq(x)) { x.portPrefix = raw.trim(); saveDev(x); return; }
+  if (f==="ports" && v>288) { if(errEl){errEl.textContent="288 ports maximum par panneau."; errEl.hidden=false;} return; }
+  if (f==="name" && !v) v = x.name;
+  if (f==="start" && v===1) v="";
+  if (v==="" ) delete x[f]; else x[f]=v;
+  if (f==="ports"||f==="sfp") dropLinksBeyond(x);
+  saveDev(x);
+}
+// Après réduction du nombre de ports : on débranche les cordons des ports qui n'existent plus
+function dropLinksBeyond(x){
+  const keep=new Set(portKeys(x)); let n=0;
+  for (const [k,pp] of Object.entries(x.p||{})) if (!keep.has(k) && pp.sw) { delete pp.sw; n++; }
+  if (x.kind==="switch") for (const o of Object.values(S.devices)) if (o.id!==x.id && o.p) {
+    let ch=false; const c=clone(o);
+    for (const pp of Object.values(c.p)) if (pp.sw?.d===x.id && !keep.has(pp.sw.p)) { delete pp.sw; ch=true; n++; }
+    if (ch) saveDev(c);
+  }
+  if (n) toast(`${n} cordon(s) débranché(s) sur les ports retirés.`);
+}
+function createRack(){
+  const n=racksSorted().length;
+  const r={id:uid("rk"), name:`Baie ${String.fromCharCode(65+(n%26))}`, site:"", units:42, order:n+1};
+  S.ui.rackId=r.id; lsSet(LSK+":rack", r.id);
+  saveRack(r); S.ui.inspOpen=true; select(null);
+  requestAnimationFrame(()=>{ const i=$("#r-name"); if(i){ i.focus(); i.select(); } });
+}
+function sampleData(){
+  const rk="rk-exemple";
+  const racks={[rk]:{id:rk, name:"Baie A (exemple)", site:"Local technique RDC", units:24, order:1}};
+  const D=(o)=>({rackId:rk, ...o});
+  const pp1={id:"dv-pp-a1", ...D({kind:"patch", name:"PP-A1", model:"Panneau Cat6A 24 ports", u:23, h:1, ports:24, p:{}})};
+  const sw1={id:"dv-sw-a1", ...D({kind:"switch", name:"SW-A1", model:"Switch 24 ports PoE+", ip:"192.168.10.2", u:21, h:1, ports:24, sfp:4, portPrefix:"Gi1/0/", sfpPrefix:"Te1/1/", p:{}})};
+  const pp2={id:"dv-pp-a2", ...D({kind:"patch", name:"PP-A2", model:"Panneau Cat6A 24 ports", u:19, h:1, ports:24, p:{}})};
+  const sw2={id:"dv-sw-a2", ...D({kind:"switch", name:"SW-A2", model:"Switch 48 ports", ip:"192.168.10.3", u:17, h:1, ports:48, sfp:4, portPrefix:"Gi1/0/", sfpPrefix:"Te1/1/", p:{}})};
+  const hosts=["PC-ACCUEIL-01","IMP-ACCUEIL","PC-COMPTA-01","PC-COMPTA-02","PC-COMPTA-03","TEL-COMPTA","PC-DIRECTION","IMP-DIRECTION","BORNE-WIFI-RDC","PC-RH-01"];
+  const rooms=["Accueil","Accueil","Compta","Compta","Compta","Compta","Direction","Direction","Couloir RDC","RH"];
+  hosts.forEach((h,i)=>{ const k=String(i+1); pp1.p[k]={jack:"B-"+String(i+1).padStart(2,"0"), host:h, room:rooms[i], sw:{d:sw1.id,p:String(i+1)}, color: h.startsWith("IMP")?"jaune":h.startsWith("BORNE")?"vert":"bleu"}; sw1.p[k]={vlan: h.startsWith("IMP")?"30":"10"}; });
+  pp1.p["11"]={jack:"B-11", room:"Salle de réunion"}; pp1.p["12"]={jack:"B-12", room:"Salle de réunion"};
+  sw1.p["24"]={vlan:"trunk", sw:{d:"dv-sw-a2", p:"48"}, color:"violet"};
+  sw1.p["S1"]={vlan:"trunk", host:"Fibre → serveur de fichiers"};
+  for (let i=1;i<=8;i++){ const k=String(i); pp2.p[k]={jack:"AT-"+String(i).padStart(2,"0"), host:i<=6?"CN-0"+i:"PC-ATELIER-0"+(i-6), room:"Atelier", sw:{d:sw2.id,p:String(i)}, color:i<=6?"orange":"bleu"}; sw2.p[k]={vlan:"20"}; }
+  sw2.p["48"]={vlan:"trunk"};
+  const cm1={id:"dv-cm-1", ...D({kind:"other", variant:"cm", name:"Passe-câbles", u:22, h:1})};
+  const cm2={id:"dv-cm-2", ...D({kind:"other", variant:"cm", name:"Passe-câbles", u:18, h:1})};
+  const fw={id:"dv-fw", ...D({kind:"router", name:"Pare-feu", model:"Routeur / pare-feu", ip:"192.168.10.254", u:15, h:1, ports:4, portPrefix:"Gi0/", p:{"1":{desc:"WAN – box FAI", color:"rouge"}, "2":{desc:"LAN", sw:{d:"dv-sw-a1",p:"23"}, color:"rouge"}}})};
+  const srv={id:"dv-srv", ...D({kind:"server", name:"Serveur de fichiers", model:"Serveur 2U", ip:"192.168.10.10", u:8, h:2, ports:4, portPrefix:"NIC", p:{"1":{desc:"LAN", ip:"192.168.10.10", sw:{d:"dv-sw-a2",p:"47"}, color:"vert"}, "2":{desc:"iLO / iDRAC", ip:"192.168.10.11"}}})};
+  sw1.p["23"]={vlan:"10"}; sw2.p["47"]={vlan:"10"};
+  const ups={id:"dv-ups", ...D({kind:"other", name:"Onduleur", model:"Onduleur 2U", u:1, h:2})};
+  const devices={}; [pp1,sw1,pp2,sw2,cm1,cm2,fw,srv,ups].forEach(d=>devices[d.id]=d);
+  return {racks, devices};
+}
+function loadData(o, msg){
+  for (const r of Object.values(o.racks||{})) saveRack(r);
+  for (const d of Object.values(o.devices||{})) saveDev(d);
+  const first=Object.values(o.racks||{})[0]; if (first){ S.ui.rackId=first.id; lsSet(LSK+":rack", first.id); }
+  onData(); toast(msg);
+}
+function csvOf(){
+  const prev=S.ui.tscope, prevE=S.ui.tempty, prevQ=S.ui.tq; S.ui.tscope="all"; S.ui.tempty=false; S.ui.tq="";
+  const rows=tableRows(); S.ui.tscope=prev; S.ui.tempty=prevE; S.ui.tq=prevQ;
+  const cell = v => { v=String(v??""); return /[;"\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const head=["Baie","Prise murale","Poste / équipement","Local","Panneau","Port panneau","Cordon","Switch","Port switch","VLAN","Note"];
+  const lines=[head, ...rows.map(x=>[x.rack,x.jack,x.host,x.room,x.direct?"":x.pp,x.pk,x.cord,x.sw,x.sk,x.vlan,x.note])].map(r=>r.map(cell).join(";"));
+  return "﻿"+lines.join("\r\n");   // point-virgule + BOM : Excel français l'ouvre directement
+}
+async function save(filename, data){
+  if (!downloads) return;
+  try { await downloads.save({filename, data}); toast("Fichier enregistré"); }
+  catch(e){ if (e?.code==="declined") return; if (e?.code==="rate_limited") toast("Une demande d'enregistrement est déjà ouverte.", true); else toast("Le fichier n'a pas pu être enregistré ici.", true); }
+}
+
+/* ============ recherche globale ============ */
+function searchItems(q){
+  q=q.trim().toLowerCase(); if(!q) return [];
+  const out=[];
+  for (const d of Object.values(S.devices)) {
+    const r=S.racks[d.rackId]; if(!r) continue;
+    if ([d.name,d.model,d.ip].join(" ").toLowerCase().includes(q)) out.push({dev:d.id, t:d.name, s:`${r.name} · U${d.u}${d.ip?" · "+d.ip:""}`, rank:0});
+    for (const k of portKeys(d)) {
+      const p=portData(d,k);
+      if (isEq(d)){
+        const m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null, lbl=portLabel(d,k);
+        const txt=[p.desc,p.ip,p.note,lbl].join(" ").toLowerCase();
+        if ((p.desc||p.ip||p.note||lbl.toLowerCase()===q) && txt.includes(q)) out.push({d:d.id,k, t:`${d.name} · ${lbl}${p.desc?" · "+p.desc:""}`, s:`${r.name}${p.ip?" · "+p.ip:""}${sw?" → "+sw.name+" · "+portLabel(sw,m.k):" · non relié"}`, rank:2});
+      } else if (d.kind==="patch"){
+        const m=mateOfPatch(d,k), sw=m?S.devices[m.d]:null, sp=sw?portData(sw,m.k):{};
+        const lbl=portLabel(d,k);
+        const txt=[p.jack,p.host,p.room,p.note,sp.vlan?"vlan "+sp.vlan:""].join(" ").toLowerCase();
+        if (txt.includes(q) || lbl===q) out.push({d:d.id,k, t:[p.jack?"Prise "+p.jack:"", p.host].filter(Boolean).join(" · ")||`${d.name} port ${lbl}`, s:`${r.name} › ${d.name} · ${lbl}${sw?" → "+sw.name+" · "+portLabel(sw,m.k):" · non brassé"}${sp.vlan?" · VLAN "+sp.vlan:""}`, rank:(p.jack||"").toLowerCase()===q||(p.host||"").toLowerCase()===q?1:2});
+      } else {
+        const lbl=portLabel(d,k);
+        const txt=[p.host,p.note,p.vlan?"vlan "+p.vlan:"", lbl].join(" ").toLowerCase();
+        if (txt.includes(q) && (p.host||p.note||p.vlan||lbl.toLowerCase()===q)) { const m=mateOfSwitch(d.id,k), pd=m?S.devices[m.d]:null;
+          out.push({d:d.id,k, t:`${d.name} · ${lbl}${p.host?" · "+p.host:""}`, s:`${r.name}${pd?" ← "+pd.name+" · "+portLabel(pd,m.k):""}${p.vlan?" · VLAN "+p.vlan:""}`, rank:3}); }
+      }
+    }
+  }
+  return out.sort((a,b)=>a.rank-b.rank).slice(0,40);
+}
+function renderSearch(){
+  const box=$("#qres"), q=$("#q").value;
+  if (!q.trim()) { box.hidden=true; return; }
+  const items=searchItems(q); S.ui.qItems=items; S.ui.qHot=Math.min(S.ui.qHot, Math.max(0,items.length-1));
+  box.innerHTML = items.length ? items.map((it,i)=>`<button class="${i===S.ui.qHot?"hot":""}" data-act="search-pick" data-i="${i}"><div class="t">${esc(it.t)}</div><div class="s">${esc(it.s)}</div></button>`).join("") : `<div class="none">Aucun résultat pour « ${esc(q)} »</div>`;
+  box.hidden=false;
+}
+function pickSearch(i){
+  const it=(S.ui.qItems||[])[i]; if(!it) return;
+  $("#qres").hidden=true; $("#q").blur();
+  S.ui.view="rack";
+  if (it.dev){ const d=S.devices[it.dev]; S.ui.rackId=d.rackId; S.ui.inspOpen=true; renderSide(); select({type:"dev", d:d.id}); }
+  else gotoPort(it.d, it.k, true);
+}
+
+/* ============ événements ============ */
+document.addEventListener("click", e => {
+  const portEl = e.target.closest(".port[data-pd]");
+  if (portEl) {
+    const t={d:portEl.dataset.pd, k:portEl.dataset.pk};
+    if (S.ui.link && !S.ui.link.busy) {
+      const src=S.devices[S.ui.link.d], tgt=S.devices[t.d];
+      if (src && tgt && ((isEnd(src) && tgt.kind==="switch") || (src.kind==="switch" && isEnd(tgt)) || (src.kind==="switch" && tgt.kind==="switch" && src.id!==tgt.id))) { tryLink(t); return; }
+      if (t.d===S.ui.link.d && t.k===S.ui.link.k) { S.ui.link=null; renderMain(); return; }
+      toast(isEnd(src) ? "Choisissez un port de switch." : "Choisissez un port de panneau, d'équipement ou d'un autre switch.");
+      return;
+    }
+    if (S.ui.link) S.ui.link=null;
+    S.ui.inspOpen=true; select({type:"port", ...t}); return;
+  }
+  const row = e.target.closest("tr[data-pd]");
+  if (row) { S.ui.inspOpen=true; select({type:"port", d:row.dataset.pd, k:row.dataset.pk}); return; }
+  if (!e.target.closest(".search")) $("#qres").hidden=true;
+  const a = e.target.closest("[data-act]");
+  if (!a) { const dv=e.target.closest(".dev[data-dev]"); if (dv && !e.target.closest("[data-grip]")) { S.ui.inspOpen=true; select({type:"dev", d:dv.dataset.dev}); } return; }
+  const act=a.dataset.act;
+  switch(act){
+    case "rack-select": S.ui.rackId=a.dataset.id; lsSet(LSK+":rack", a.dataset.id); S.ui.link=null; S.ui.sel=null; renderSide(); select(null); break;
+    case "rack-new": createRack(); break;
+    case "sample": loadData(sampleData(), "Baie d'exemple chargée"); break;
+    case "view": S.ui.view=a.dataset.v; renderMain(); break;
+    case "dev-add": { S.ui.inspOpen=true; select({type:"new", u:null}); break; }
+    case "slot": { S.ui.inspOpen=true; select({type:"new", u:+a.dataset.u}); break; }
+    case "preset": { S.ui.newPreset=a.dataset.k; renderInsp(true); break; }
+    case "dev-create": {
+      const r=S.racks[S.ui.rackId]; const pr=PRESETS.find(p=>p.key===S.ui.newPreset);
+      const u=parseInt($("#n-u").value,10), name=$("#n-name").value.trim()||pr.label;
+      const ok=fits(r.id,u,pr.h);
+      if (isNaN(u)||!ok.ok){ const er=$("#newErr"); er.textContent=isNaN(u)?"Indiquez une position en U.":ok.msg; er.hidden=false; break; }
+      const d={id:uid("dv"), rackId:r.id, kind:pr.kind, name, model:pr.model||"", u, h:pr.h};
+      if (pr.kind!=="other") { d.ports=pr.ports; d.p={}; }
+      if (pr.kind==="switch") { d.sfp=pr.sfp; d.portPrefix="Gi1/0/"; d.sfpPrefix="Te1/1/"; }
+      if (EQ[pr.kind]) d.portPrefix=EQ[pr.kind].prefix;
+      if (pr.variant) d.variant=pr.variant;
+      if (!d.model) delete d.model;
+      saveDev(d); toast(`${name} ajouté en U${u}`);
+      select(pr.kind==="other" ? null : {type:"dev", d:d.id});
+      break; }
+    case "confirm-cancel-new": select(null); break;
+    case "dev-select": S.ui.inspOpen=true; select({type:"dev", d:a.dataset.id}); break;
+    case "dev-move": { const s=S.ui.sel; const d=S.devices[s?.d]; if(!d) break; const nu=d.u+(+a.dataset.dir); const ok=fits(d.rackId,nu,d.h,d.id); if(!ok.ok){ toast(ok.msg,true); break; } saveDev({...clone(d), u:nu}); break; }
+    case "dev-del": S.ui.confirm="dev:"+S.ui.sel.d; renderInsp(true); break;
+    case "dev-del-ok": deleteDevice(S.ui.sel.d); break;
+    case "rack-del": S.ui.confirm="rack:"+S.ui.rackId; renderInsp(true); break;
+    case "rack-del-ok": {
+      const id=S.ui.rackId; const devs=devsOf(id);
+      devs.forEach(d=>deleteDevice(d.id));
+      delRack(id); S.ui.rackId=null; S.ui.confirm=null; onData(); toast("Baie supprimée"); break; }
+    case "confirm-cancel": S.ui.confirm=null; renderInsp(true); break;
+    case "insp-close": S.ui.inspOpen=false; S.ui.sel=null; S.ui.link=null; renderMain(); renderInsp(true); break;
+    case "goto-port": gotoPort(a.dataset.d, a.dataset.k, true); break;
+    case "port-nav": { const s=S.ui.sel, d=S.devices[s.d], ks=portKeys(d), i=ks.indexOf(s.k)+(+a.dataset.dir); if(ks[i]) gotoPort(d.id, ks[i]); break; }
+    case "link-start": { const s=S.ui.sel; S.ui.link={d:s.d,k:s.k}; S.ui.view="rack"; renderMain(); if (window.matchMedia("(max-width:1250px)").matches){ S.ui.inspOpen=false; renderInsp(true);} break; }
+    case "link-cancel": { const L=S.ui.link; S.ui.link=null; if(L){ S.ui.inspOpen=true; select({type:"port", d:L.d, k:L.k}); } else renderMain(); break; }
+    case "link-replace": { const L=S.ui.link; if(!L?.busy) break; if (L.busy.trunk) doTrunk(L.busy.a.d,L.busy.a.k,L.busy.b.d,L.busy.b.k); else { const {patch,swp}=L.busy; doLink(patch.d,patch.k,swp.d,swp.k); } S.ui.link=null; S.ui.inspOpen=true; gotoPort(L.d,L.k); break; }
+    case "link-pick": {
+      const s=S.ui.sel, d=S.devices[s.d]; const port=$("#pickPort")?.value; if(!port) break;
+      if (isEnd(d)) { const sw=$("#pickSw").value; S.ui.link={d:s.d,k:s.k}; tryLink({d:sw,k:port}); }
+      else { const pp=$("#pickPp").value; S.ui.link={d:s.d,k:s.k}; tryLink({d:pp,k:port}); }
+      if (S.ui.link?.busy) { renderMain(); window.scrollTo({top:0, behavior:"smooth"}); }
+      break; }
+    case "unlink": { const s=S.ui.sel; unlinkAt(s.d,s.k); break; }
+    case "search-pick": pickSearch(+a.dataset.i); break;
+    case "export-csv": save("brassage.csv", csvOf()); break;
+    case "export-json": save("baies-brassage-sauvegarde.json", JSON.stringify({format:"baies-brassage", version:1, exportedAt:new Date().toISOString(), racks:S.racks, devices:S.devices}, null, 2)); break;
+    case "import-json": $("#fileImport").click(); break;
+    case "data-open": dataOpen(); break;
+    case "data-saveas": dataSaveAs(); break;
+    case "data-reveal": window.desktop?.reveal(); break;
+  }
+});
+
+// drag des équipements dans la baie
+let drag=null;
+document.addEventListener("pointerdown", e => {
+  const g=e.target.closest("[data-grip]"); if(!g || S.readOnly || e.button!==0) return;
+  const d=S.devices[g.dataset.grip]; if(!d) return;
+  const el=g.closest(".dev");
+  drag={id:d.id, el, y0:e.clientY, u0:d.u, u:d.u, moved:false, top0:parseFloat(el.style.top)};
+  g.setPointerCapture(e.pointerId);
+});
+document.addEventListener("pointermove", e => {
+  if(!drag) return;
+  const dy=e.clientY-drag.y0;
+  if (!drag.moved && Math.abs(dy)<5) return;
+  drag.moved=true; drag.el.classList.add("drag");
+  const d=S.devices[drag.id], r=S.racks[d.rackId];
+  let nu = drag.u0 - Math.round(dy/(UH*scale));
+  nu = Math.max(1, Math.min(r.units-d.h+1, nu));
+  drag.u=nu;
+  drag.el.style.top = (r.units-(nu+d.h-1))*UH+"px";
+  drag.el.classList.toggle("bad", !fits(d.rackId,nu,d.h,d.id).ok);
+});
+document.addEventListener("pointerup", () => {
+  if(!drag) return; const g=drag; drag=null;
+  const d=S.devices[g.id]; if(!d) return;
+  if (!g.moved){ S.ui.inspOpen=true; select({type:"dev", d:d.id}); return; }
+  const ok=fits(d.rackId,g.u,d.h,d.id);
+  if (ok.ok && g.u!==d.u){ saveDev({...clone(d), u:g.u}); toast(`${d.name} déplacé en U${g.u}`); }
+  else { if(!ok.ok) toast(ok.msg,true); renderMain(); }
+});
+document.addEventListener("pointercancel", () => { if(drag){ drag=null; renderMain(); } });
+
+// champs
+document.addEventListener("change", e => {
+  const t=e.target;
+  if (t.id==="cordsToggle"){ S.ui.showCords=t.checked; drawCords(); return; }
+  if (t.id==="tscope"){ S.ui.tscope=t.value; renderTable(); return; }
+  if (t.id==="tempty"){ S.ui.tempty=t.checked; renderTable(); return; }
+  if (t.id==="pickSw"){ S.ui.pickSw=t.value; renderInsp(true); return; }
+  if (t.id==="pickPp"){ S.ui.pickPp=t.value; renderInsp(true); return; }
+  if (t.id==="fileImport"){ importFile(t); return; }
+  if (S.readOnly) return;
+  if (t.dataset.f){ const s=S.ui.sel; if(s?.type==="port") setPortField(s.d,s.k,t.dataset.f,t.value); return; }
+  if (t.dataset.qf){ setPortField(t.dataset.qd,t.dataset.qk,t.dataset.qf,t.value); return; }
+  if (t.dataset.df){ const d=S.devices[S.ui.sel?.d]; if(d) updateDevField(d,t.dataset.df,t.value); return; }
+  if (t.dataset.rf){ const r=clone(S.racks[S.ui.rackId]); let v=t.value.trim();
+    if (t.dataset.rf==="units"){ v=parseInt(v,10); const top=Math.max(0,...devsOf(r.id).map(d=>d.u+d.h-1)); if(isNaN(v)||v<4||v<top){ toast(`Hauteur impossible : un équipement occupe déjà U${top}.`,true); t.value=r.units; return; } }
+    if (t.dataset.rf==="name" && !v) { t.value=r.name; return; }
+    r[t.dataset.rf]=v; saveRack(r); }
+});
+document.addEventListener("input", e => {
+  const t=e.target;
+  if (t.id==="q"){ S.ui.qHot=0; renderSearch(); }
+  if (t.id==="tq"){ S.ui.tq=t.value; const pos=t.selectionStart; renderTable(); const n=$("#tq"); n.focus(); try{ n.setSelectionRange(pos,pos); }catch{} }
+});
+document.addEventListener("focusout", () => { setTimeout(()=>{ if (pendingInsp && !$("#insp").contains(document.activeElement)) renderInsp(); }, 0); });
+document.addEventListener("keydown", e => {
+  if (e.target.id==="q"){
+    const items=S.ui.qItems||[];
+    if (e.key==="ArrowDown"){ e.preventDefault(); S.ui.qHot=Math.min(items.length-1,S.ui.qHot+1); renderSearch(); }
+    else if (e.key==="ArrowUp"){ e.preventDefault(); S.ui.qHot=Math.max(0,S.ui.qHot-1); renderSearch(); }
+    else if (e.key==="Enter"){ e.preventDefault(); pickSearch(S.ui.qHot); }
+    else if (e.key==="Escape"){ $("#qres").hidden=true; }
+    return;
+  }
+  if (e.key==="Enter" && e.target.matches("[data-qf]")){
+    // passer à la ligne suivante, même colonne, comme dans un tableur
+    e.preventDefault(); const all=[...document.querySelectorAll(`[data-qf="${e.target.dataset.qf}"]`)]; const i=all.indexOf(e.target);
+    e.target.dispatchEvent(new Event("change",{bubbles:true}));
+    if (all[i+1]) all[i+1].focus();
+  }
+  if (e.key==="Escape"){
+    if (!$("#qres").hidden){ $("#qres").hidden=true; }
+    else if (S.ui.link){ S.ui.link=null; renderMain(); }
+    else if (S.ui.sel && !e.target.matches("input,textarea,select")){ S.ui.sel=null; S.ui.inspOpen=false; renderMain(); renderInsp(true); }
+  }
+});
+async function importFile(input){
+  const f=input.files?.[0]; input.value=""; if(!f) return;
+  try{
+    const o=JSON.parse(await f.text());
+    if (!o || typeof o.racks!=="object" || typeof o.devices!=="object") throw new Error();
+    loadData({racks:Object.fromEntries(Object.entries(o.racks).map(([k,v])=>[k,{...v,id:k}])), devices:Object.fromEntries(Object.entries(o.devices).map(([k,v])=>[k,{...v,id:k}]))}, `Sauvegarde restaurée : ${Object.keys(o.racks).length} baie(s), ${Object.keys(o.devices).length} équipement(s)`);
+  } catch { toast("Ce fichier n'est pas une sauvegarde de Baies de brassage.", true); }
+}
+let rz; window.addEventListener("resize", ()=>{ clearTimeout(rz); rz=setTimeout(()=>{ fitRack(); drawCords(); }, 80); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=>drawCords());
+
+boot();
+})();
+</script>
+
+</body></html>
