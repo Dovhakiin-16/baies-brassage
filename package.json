@@ -1,0 +1,60 @@
+{
+  "name": "baies-brassage",
+  "version": "1.2.1",
+  "description": "Gestion des baies, panneaux de brassage, switchs et prises réseau",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable --x64 --publish never"
+  },
+  "author": "Donovan Faglain",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0"
+  },
+  "productName": "Baies de brassage",
+  "build": {
+    "appId": "fr.dfaglain.baies-brassage",
+    "productName": "Baies de brassage",
+    "copyright": "© 2026 Donovan Faglain",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "build/icon.png"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Baies de brassage",
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerLanguages": [
+        "fr_FR"
+      ],
+      "language": "1036",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "BaiesDeBrassage-portable-${version}.exe"
+    },
+    "publish": null
+  }
+}
